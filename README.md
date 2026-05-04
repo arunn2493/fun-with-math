@@ -26,3 +26,18 @@ This project was built to explore how simple, interactive tools can make learnin
 - Progress tracking by skill (operation + digit level)
 - Personalized practice recommendations
 - Parent dashboard
+
+---
+
+## Version History
+
+### V1.1
+- Added question counter
+- Added correct answers summary
+- Added Enter key support
+- Added input auto-focus
+
+### MVP
+- Launched playable arithmetic game
+- Added duration, operation, and difficulty selection
+- Added candy-based reward system

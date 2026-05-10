@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fun with Math</title>
+  <style>
+    :root {
+      --sky: #cdeffd;
+      --sky-deep: #9eddf4;
+      --sun: #ffd86b;
+      --grass: #8edc93;
+      --grass-dark: #60bd7a;
+      --card: #fffaf0;
+      --ink: #293241;
+      --muted: #64748b;
+      --pink: #ff8cab;
+      --peach: #ffb27b;
+      --mint: #83dfbf;
+      --blue: #7cc6ff;
+      --violet: #b9a1ff;
+      --yellow: #ffe38a;
+      --good: #16834f;
+      --try: #876111;
+      --shadow: 0 18px 40px rgba(41, 50, 65, 0.16);
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 14%, rgba(255, 216, 107, 0.85) 0 52px, transparent 53px),
+        radial-gradient(circle at 84% 15%, rgba(255, 255, 255, 0.9) 0 30px, transparent 31px),
+        radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.9) 0 42px, transparent 43px),
+        radial-gradient(circle at 91% 18%, rgba(255, 255, 255, 0.9) 0 36px, transparent 37px),
+        linear-gradient(180deg, var(--sky) 0%, #eaf9ff 66%, #dff7d7 66%, #c8f0bb 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      right: -12vw;
+      bottom: -78px;
+      width: 70vw;
+      height: 210px;
+      border-radius: 50% 50% 0 0;
+      background: var(--grass);
+    }
+
+    body::after {
+      right: auto;
+      left: -16vw;
+      bottom: -92px;
+      width: 82vw;
+      height: 245px;
+      background: var(--grass-dark);
+      opacity: 0.45;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(960px, calc(100% - 28px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 24px 0 32px;
+      display: grid;
+      place-items: center;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .card {
+      width: min(720px, 100%);
+      margin: 0 auto;
+      padding: clamp(22px, 5vw, 42px);
+      border: 5px solid rgba(255, 255, 255, 0.8);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 240, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .home-card {
+      position: relative;
+      min-height: min(620px, calc(100vh - 64px));
+      display: grid;
+      align-content: center;
+    }
+
+    .top-link {
+      position: absolute;
+      top: clamp(16px, 4vw, 26px);
+      right: clamp(16px, 4vw, 26px);
+      min-height: 44px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 0.98rem;
+      font-weight: 900;
+      box-shadow: 0 6px 0 rgba(41, 50, 65, 0.1);
+      transition: transform 0.15s ease;
+    }
+
+    .top-link:hover,
+    .small-button:hover {
+      transform: translateY(-2px);
+    }
+
+    .home-message {
+      width: min(520px, 100%);
+      margin: 0 auto 4px;
+      padding: 0 14px;
+      color: var(--muted);
+      font-size: clamp(1.08rem, 3.5vw, 1.3rem);
+      font-weight: 900;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .progress-card {
+      width: min(860px, 100%);
+    }
+
+    .progress-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .small-button {
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 16px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 0.96rem;
+      font-weight: 900;
+      box-shadow: 0 6px 0 rgba(41, 50, 65, 0.1);
+      transition: transform 0.15s ease;
+    }
+
+    .reset-button {
+      background: #fff5f7;
+      color: #9a3150;
+    }
+
+    .progress-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 22px 0;
+    }
+
+    .progress-stat {
+      padding: 18px;
+      border-radius: 22px;
+      background: #fff;
+      text-align: center;
+      box-shadow: inset 0 -5px 0 rgba(41, 50, 65, 0.08);
+    }
+
+    .progress-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.96rem;
+      font-weight: 900;
+    }
+
+    .progress-stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: clamp(2rem, 7vw, 3rem);
+      line-height: 1;
+    }
+
+    .session-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .session-card {
+      padding: 16px;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: inset 0 -5px 0 rgba(124, 198, 255, 0.16);
+    }
+
+    .session-title {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      font-weight: 900;
+    }
+
+    .session-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
+      color: var(--muted);
+      font-size: 0.96rem;
+      font-weight: 900;
+    }
+
+    .empty-progress {
+      margin: 16px 0 0;
+      padding: 18px;
+      border-radius: 20px;
+      background: #fff;
+      color: var(--muted);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .title {
+      margin: 0 0 12px;
+      font-size: clamp(3rem, 12vw, 6rem);
+      line-height: 0.95;
+      text-align: center;
+      color: #f46f91;
+      text-shadow: 0 5px 0 #ffe38a;
+    }
+
+    .subtitle,
+    .helper {
+      margin: 0 auto 26px;
+      max-width: 560px;
+      color: var(--muted);
+      font-size: clamp(1.05rem, 2.6vw, 1.25rem);
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .helper {
+      margin-top: 18px;
+    }
+
+    .section-label {
+      margin: 26px 0 12px;
+      font-size: clamp(1.05rem, 3vw, 1.3rem);
+      font-weight: 900;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .choice {
+      min-height: 58px;
+      padding: 12px 14px;
+      border: 3px solid transparent;
+      border-radius: 20px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 900;
+      box-shadow: 0 8px 0 rgba(41, 50, 65, 0.1);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .choice:hover,
+    .primary:hover,
+    .submit:hover {
+      transform: translateY(-2px);
+    }
+
+    .choice.selected {
+      border-color: rgba(41, 50, 65, 0.14);
+      background: var(--yellow);
+      box-shadow: 0 8px 0 rgba(241, 179, 46, 0.35);
+    }
+
+    .choice[data-color="blue"].selected { background: #b9e2ff; }
+    .choice[data-color="mint"].selected { background: #b8efd9; }
+    .choice[data-color="peach"].selected { background: #ffd0a8; }
+    .choice[data-color="violet"].selected { background: #d9ceff; }
+    .choice[data-color="pink"].selected { background: #ffc0d0; }
+
+    .validation {
+      min-height: 28px;
+      margin: 14px 0 0;
+      color: #be3b5a;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .primary,
+    .submit {
+      display: block;
+      width: min(320px, 100%);
+      min-height: 64px;
+      margin: 28px auto 0;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #ff9db6, #f46f91);
+      color: #fff;
+      font-size: clamp(1.3rem, 5vw, 1.7rem);
+      font-weight: 900;
+      box-shadow: 0 10px 0 #c94f72;
+    }
+
+    .game-card {
+      width: min(760px, 100%);
+    }
+
+    .game-actions {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .home-button {
+      min-height: 48px;
+      padding: 9px 18px;
+      border-radius: 18px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 1rem;
+      font-weight: 900;
+      box-shadow: 0 7px 0 rgba(41, 50, 65, 0.1);
+      transition: transform 0.15s ease;
+    }
+
+    .home-button:hover {
+      transform: translateY(-2px);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      min-height: 76px;
+      padding: 12px;
+      border-radius: 22px;
+      background: #fff;
+      text-align: center;
+      box-shadow: inset 0 -5px 0 rgba(41, 50, 65, 0.08);
+    }
+
+    .timer-stat {
+      --time-left: 1;
+    }
+
+    .stat-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .clock-face {
+      position: relative;
+      flex: 0 0 auto;
+      width: clamp(52px, 12vw, 72px);
+      aspect-ratio: 1;
+      border: 5px solid #fff;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #fff 0 48%, transparent 49%),
+        conic-gradient(#ffe6ee calc((1 - var(--time-left)) * 1turn), var(--pink) 0);
+      box-shadow: inset 0 0 0 4px #b9e2ff, 0 6px 0 rgba(41, 50, 65, 0.08);
+    }
+
+    .clock-hand {
+      position: absolute;
+      left: 50%;
+      bottom: 50%;
+      width: 5px;
+      height: 32%;
+      border-radius: 999px;
+      background: var(--ink);
+      transform: translateX(-50%) rotate(calc((1 - var(--time-left)) * 1turn));
+      transform-origin: 50% 100%;
+      transition: transform 0.35s ease, background 0.35s ease;
+    }
+
+    .clock-dot {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--peach);
+      transform: translate(-50%, -50%);
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.96rem;
+      font-weight: 900;
+    }
+
+    .stat-value {
+      display: block;
+      margin-top: 2px;
+      font-size: clamp(1.7rem, 6vw, 2.6rem);
+      font-weight: 900;
+    }
+
+    .question-wrap {
+      padding: clamp(18px, 5vw, 30px);
+      border-radius: 28px;
+      background: #ffffff;
+      text-align: center;
+      box-shadow: inset 0 -8px 0 rgba(124, 198, 255, 0.18);
+    }
+
+    .question {
+      margin: 8px 0 22px;
+      font-size: clamp(3.4rem, 17vw, 7rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .answer-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .answer {
+      width: 100%;
+      min-height: 68px;
+      padding: 8px 18px;
+      border: 4px solid #b9e2ff;
+      border-radius: 22px;
+      background: #f7fcff;
+      color: var(--ink);
+      font-size: clamp(2rem, 8vw, 3rem);
+      font-weight: 900;
+      text-align: center;
+      outline: none;
+    }
+
+    .answer:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 5px rgba(255, 140, 171, 0.24);
+    }
+
+    .submit {
+      width: auto;
+      min-width: 150px;
+      margin: 0;
+      padding: 0 22px;
+      font-size: clamp(1.15rem, 4vw, 1.45rem);
+    }
+
+    .feedback {
+      min-height: 38px;
+      margin: 18px 0 0;
+      font-size: clamp(1.15rem, 4vw, 1.55rem);
+      font-weight: 900;
+    }
+
+    .feedback.good {
+      color: var(--good);
+    }
+
+    .feedback.try {
+      color: var(--try);
+    }
+
+    .end-title {
+      margin: 0;
+      color: #f46f91;
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      line-height: 0.95;
+      text-align: center;
+      text-shadow: 0 5px 0 #ffe38a;
+    }
+
+    .candies-big {
+      margin: 24px auto 8px;
+      padding: 22px;
+      border-radius: 26px;
+      background: #fff;
+      text-align: center;
+      font-size: clamp(1.5rem, 6vw, 2.4rem);
+      font-weight: 900;
+    }
+
+    .end-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .end-stat {
+      padding: 14px;
+      border-radius: 20px;
+      background: #fff7d7;
+      color: var(--ink);
+      font-size: clamp(1.05rem, 4vw, 1.35rem);
+      font-weight: 900;
+    }
+
+    .candy-rain {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .candy-prize {
+      position: relative;
+      width: min(230px, 78vw);
+      min-height: 118px;
+      display: grid;
+      place-items: center;
+    }
+
+    .candy-piece {
+      position: relative;
+      width: 148px;
+      height: 70px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, transparent 0 18%, rgba(255,255,255,0.5) 18% 25%, transparent 25% 45%, rgba(255,255,255,0.55) 45% 54%, transparent 54% 76%, rgba(255,255,255,0.45) 76% 83%, transparent 83%),
+        linear-gradient(135deg, #ff8cab, #ffe38a 48%, #83dfbf);
+      box-shadow: 0 10px 0 rgba(41, 50, 65, 0.12);
+      transform: rotate(-8deg);
+    }
+
+    .candy-piece::before,
+    .candy-piece::after {
+      content: "";
+      position: absolute;
+      top: 13px;
+      width: 54px;
+      height: 44px;
+      background: #b9e2ff;
+      clip-path: polygon(0 50%, 100% 0, 100% 100%);
+    }
+
+    .candy-piece::before {
+      left: -42px;
+    }
+
+    .candy-piece::after {
+      right: -42px;
+      transform: scaleX(-1);
+    }
+
+    .candy-label {
+      position: absolute;
+      right: 8px;
+      bottom: 4px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--yellow);
+      color: var(--ink);
+      font-size: 1rem;
+      font-weight: 900;
+      box-shadow: 0 5px 0 rgba(241, 179, 46, 0.35);
+    }
+
+    .shape-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 18px;
+    }
+
+    .shape {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--pink);
+      box-shadow: 40px 8px 0 var(--mint), 80px -4px 0 var(--blue), 120px 6px 0 var(--peach);
+    }
+
+    .hide {
+      display: none;
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        width: min(100% - 18px, 960px);
+        padding-top: 12px;
+      }
+
+      .card {
+        border-width: 4px;
+        border-radius: 24px;
+      }
+
+      .choices {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .top-link {
+        position: static;
+        justify-self: end;
+        margin-bottom: 18px;
+      }
+
+      .progress-actions {
+        display: grid;
+      }
+
+      .progress-summary,
+      .session-details {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .answer-row {
+        grid-template-columns: 1fr;
+      }
+
+      .submit {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <section id="homeScreen" class="screen active">
+      <div class="card home-card">
+        <button id="viewProgressButton" class="top-link" type="button">View Progress</button>
+        <div class="shape-row" aria-hidden="true"><span class="shape"></span></div>
+        <h1 class="title">Fun with Math</h1>
+        <p id="homeMessage" class="home-message">Collect candies while practicing math!</p>
+        <button id="playNowButton" class="primary" type="button">Play Now</button>
+      </div>
+    </section>
+
+    <section id="progressScreen" class="screen">
+      <div class="card progress-card">
+        <div class="progress-actions">
+          <button id="progressBackButton" class="small-button" type="button">Back Home</button>
+          <button id="resetProgressButton" class="small-button reset-button" type="button">Reset progress</button>
+        </div>
+        <h1 class="title">Fun with Math</h1>
+        <p class="subtitle">Your candies are saved on this device.</p>
+        <div class="progress-summary">
+          <div class="progress-stat">
+            <span>Lifetime candies</span>
+            <strong id="lifetimeCandies">0</strong>
+          </div>
+          <div class="progress-stat">
+            <span>Last session candies</span>
+            <strong id="lastSessionCandies">0</strong>
+          </div>
+        </div>
+        <div class="section-label">Last 5 sessions</div>
+        <div id="recentSessions" class="session-list"></div>
+      </div>
+    </section>
+
+    <section id="setupScreen" class="screen">
+      <div class="card">
+        <div class="game-actions">
+          <button id="setupHomeButton" class="home-button" type="button">Home</button>
+        </div>
+        <div class="shape-row" aria-hidden="true"><span class="shape"></span></div>
+        <h1 class="title">Fun with Math</h1>
+        <p class="subtitle">Pick your adventure, collect candies, and have fun.</p>
+
+        <div class="section-label">How long?</div>
+        <div class="choices" id="durationChoices" aria-label="Duration">
+          <button class="choice selected" type="button" data-duration="1" data-color="pink">1 min</button>
+          <button class="choice" type="button" data-duration="2" data-color="peach">2 min</button>
+          <button class="choice" type="button" data-duration="3" data-color="mint">3 min</button>
+          <button class="choice" type="button" data-duration="4" data-color="blue">4 min</button>
+          <button class="choice" type="button" data-duration="5" data-color="violet">5 min</button>
+        </div>
+
+        <div class="section-label">Operations</div>
+        <div class="choices" id="operationChoices" aria-label="Operations">
+          <button class="choice" type="button" data-operation="addition" data-color="pink">Addition</button>
+          <button class="choice" type="button" data-operation="subtraction" data-color="mint">Subtraction</button>
+          <button class="choice" type="button" data-operation="multiplication" data-color="blue">Multiplication</button>
+          <button class="choice" type="button" data-operation="division" data-color="peach">Division</button>
+        </div>
+        <p class="helper">No math operation picked? We will mix them all together.</p>
+
+        <div class="section-label">Number size</div>
+        <div class="choices" id="digitChoices" aria-label="Digit difficulty">
+          <button class="choice" type="button" data-digits="1" data-color="pink">1 digit</button>
+          <button class="choice" type="button" data-digits="2" data-color="mint">2 digits</button>
+          <button class="choice" type="button" data-digits="3" data-color="blue">3 digits</button>
+        </div>
+        <p class="helper">No number size picked? We will mix all the digits for extra fun.</p>
+
+        <button id="startButton" class="primary" type="button">Start</button>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="card game-card">
+        <div class="game-actions">
+          <button id="homeButton" class="home-button" type="button">Back home</button>
+        </div>
+        <div class="topbar">
+          <div class="stat timer-stat" id="timerStat">
+            <span class="stat-label">Timer</span>
+            <div class="stat-content">
+              <div class="clock-face" aria-hidden="true">
+                <span class="clock-hand"></span>
+                <span class="clock-dot"></span>
+              </div>
+              <span id="timerDisplay" class="stat-value">1:00</span>
+            </div>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Candies collected</span>
+            <span id="candyDisplay" class="stat-value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Questions solved</span>
+            <span id="questionsSolvedDisplay" class="stat-value">0</span>
+          </div>
+        </div>
+
+        <div class="question-wrap">
+          <div id="questionText" class="question">2 + 2</div>
+          <form id="answerForm" class="answer-row">
+            <input id="answerInput" class="answer" type="number" inputmode="numeric" autocomplete="off" aria-label="Answer">
+            <button class="submit" type="submit">Submit</button>
+          </form>
+          <div id="feedback" class="feedback"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="endScreen" class="screen">
+      <div class="card">
+        <h2 id="endTitle" class="end-title">Great job!</h2>
+        <div class="candies-big">
+          <div>You collected <span id="finalCandyCount">0</span> candies!</div>
+          <div class="end-stats" aria-label="Game summary">
+            <div class="end-stat">Questions solved: <span id="finalQuestionCount">0</span></div>
+            <div class="end-stat">You got <span id="finalCorrectCount">0</span> correct</div>
+          </div>
+          <div id="candyRain" class="candy-rain" aria-hidden="true">
+            <div class="candy-prize">
+              <div class="candy-piece"></div>
+              <div class="candy-label">Candy power!</div>
+            </div>
+          </div>
+        </div>
+        <button id="playAgainButton" class="primary" type="button">Play again</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "funWithMathSessionsV12";
+    let memorySessions = [];
+
+    const appState = {
+      setup: {
+        durationMinutes: 1,
+        operations: [],
+        digitLevels: []
+      },
+      session: {
+        candies: 0,
+        questionsAttempted: 0,
+        correctAnswers: 0,
+        secondsLeft: 60,
+        totalSeconds: 60,
+        timerId: null,
+        endGraceTimerId: null,
+        currentQuestion: null,
+        askedQuestionKeys: new Set(),
+        ended: false,
+        saved: false,
+        history: []
+      },
+      lastCompletedSession: null
+    };
+
+    const operations = {
+      addition: { symbol: "+", label: "Addition" },
+      subtraction: { symbol: "-", label: "Subtraction" },
+      multiplication: { symbol: "x", label: "Multiplication" },
+      division: { symbol: "÷", label: "Division" }
+    };
+
+    const homeScreen = document.getElementById("homeScreen");
+    const progressScreen = document.getElementById("progressScreen");
+    const setupScreen = document.getElementById("setupScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const endScreen = document.getElementById("endScreen");
+    const homeMessage = document.getElementById("homeMessage");
+    const lifetimeCandies = document.getElementById("lifetimeCandies");
+    const lastSessionCandies = document.getElementById("lastSessionCandies");
+    const recentSessions = document.getElementById("recentSessions");
+    const timerStat = document.getElementById("timerStat");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const candyDisplay = document.getElementById("candyDisplay");
+    const questionsSolvedDisplay = document.getElementById("questionsSolvedDisplay");
+    const questionText = document.getElementById("questionText");
+    const answerInput = document.getElementById("answerInput");
+    const feedback = document.getElementById("feedback");
+    const answerForm = document.getElementById("answerForm");
+    const endTitle = document.getElementById("endTitle");
+    const finalCandyCount = document.getElementById("finalCandyCount");
+    const finalQuestionCount = document.getElementById("finalQuestionCount");
+    const finalCorrectCount = document.getElementById("finalCorrectCount");
+    const candyLabel = document.querySelector(".candy-label");
+
+    const celebrationMessages = [
+      "Amazing work!",
+      "You kept going!",
+      "Math star!",
+      "Candy champion!",
+      "Super thinking!",
+      "You did it!"
+    ];
+
+    const keepTryingMessages = [
+      "Nice try. Give it another go!",
+      "That is okay. Try again!",
+      "You can do it. Try once more!",
+      "Keep practicing. You are getting better!"
+    ];
+
+    const lowCandyMessages = [
+      "Good work! Try again to collect more candies.",
+      "Nice candy collecting! One more round could bring even more.",
+      "That was good practice. More candies are waiting!",
+      "You did well! Try another round when you are ready."
+    ];
+
+    document.getElementById("playNowButton").addEventListener("click", showSetup);
+    document.getElementById("viewProgressButton").addEventListener("click", showProgress);
+    document.getElementById("progressBackButton").addEventListener("click", showHome);
+    document.getElementById("resetProgressButton").addEventListener("click", resetProgress);
+    document.getElementById("durationChoices").addEventListener("click", handleDurationChoice);
+    document.getElementById("operationChoices").addEventListener("click", handleMultiChoice);
+    document.getElementById("digitChoices").addEventListener("click", handleMultiChoice);
+    document.getElementById("startButton").addEventListener("click", startGame);
+    document.getElementById("setupHomeButton").addEventListener("click", showHome);
+    document.getElementById("homeButton").addEventListener("click", showHome);
+    document.getElementById("playAgainButton").addEventListener("click", showSetup);
+    answerForm.addEventListener("submit", submitAnswer);
+
+    renderHome();
+
+    function loadSessions() {
+      return mergeSessions(readStoredSessions().concat(memorySessions));
+    }
+
+    function readStoredSessions() {
+      try {
+        const rawSessions = localStorage.getItem(STORAGE_KEY);
+        const parsedSessions = rawSessions ? JSON.parse(rawSessions) : [];
+        return Array.isArray(parsedSessions)
+          ? parsedSessions.filter(session => session && session.timestamp)
+          : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveSession(sessionRecord) {
+      memorySessions = mergeSessions(memorySessions.concat(sessionRecord));
+      const sessions = mergeSessions(readStoredSessions().concat(sessionRecord));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    }
+
+    function getLifetimeCandies() {
+      return loadSessions().reduce((total, session) => total + Number(session.candiesEarned || 0), 0);
+    }
+
+    function renderHome() {
+      const sessions = getSessionsNewestFirst();
+      const lastSession = sessions[0];
+      homeMessage.textContent = lastSession
+        ? "Last time you earned " + lastSession.candiesEarned + " candies 🍬. Can you earn more today?"
+        : "Collect candies while practicing math!";
+    }
+
+    function renderProgress() {
+      const sessions = getSessionsNewestFirst();
+      const lastSession = sessions[0];
+
+      lifetimeCandies.textContent = String(getLifetimeCandies());
+      lastSessionCandies.textContent = String(lastSession ? lastSession.candiesEarned : 0);
+      recentSessions.textContent = "";
+
+      if (sessions.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "empty-progress";
+        emptyState.textContent = "Play a round to start collecting candies here.";
+        recentSessions.appendChild(emptyState);
+        return;
+      }
+
+      sessions.slice(0, 5).forEach(session => {
+        const card = document.createElement("div");
+        card.className = "session-card";
+
+        const title = document.createElement("p");
+        title.className = "session-title";
+        title.textContent = formatSessionDate(session.timestamp);
+
+        const details = document.createElement("div");
+        details.className = "session-details";
+        [
+          "Candies earned: " + session.candiesEarned,
+          "Questions attempted: " + session.questionsAttempted,
+          "Duration: " + session.durationMinutes + " min",
+          "Operations: " + formatOperations(session.operations),
+          "Digits: " + formatDigitLevels(session.digitLevels)
+        ].forEach(text => {
+          const item = document.createElement("div");
+          item.textContent = text;
+          details.appendChild(item);
+        });
+
+        card.appendChild(title);
+        card.appendChild(details);
+        recentSessions.appendChild(card);
+      });
+    }
+
+    function resetProgress() {
+      const shouldReset = confirm("Clear saved candy progress on this device?");
+      if (!shouldReset) return;
+
+      localStorage.removeItem(STORAGE_KEY);
+      memorySessions = [];
+      appState.lastCompletedSession = null;
+      renderHome();
+      renderProgress();
+    }
+
+    function getSessionsNewestFirst() {
+      return loadSessions().sort((first, second) => new Date(second.timestamp) - new Date(first.timestamp));
+    }
+
+    function mergeSessions(sessions) {
+      const seen = new Set();
+      return sessions.filter(session => {
+        if (!session || !session.timestamp) return false;
+        const key = [
+          session.timestamp,
+          session.candiesEarned,
+          session.questionsAttempted,
+          session.correctAnswers
+        ].join(":");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function formatSessionDate(timestamp) {
+      return new Date(timestamp).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function formatOperations(selectedOperations) {
+      selectedOperations = Array.isArray(selectedOperations) ? selectedOperations : [];
+      return selectedOperations.map(operation => operations[operation]?.label || operation).join(", ");
+    }
+
+    function formatDigitLevels(selectedDigits) {
+      selectedDigits = Array.isArray(selectedDigits) ? selectedDigits : [];
+      return selectedDigits.map(digits => digits + (Number(digits) === 1 ? " digit" : " digits")).join(", ");
+    }
+
+    function handleDurationChoice(event) {
+      const button = event.target.closest("[data-duration]");
+      if (!button) return;
+
+      document.querySelectorAll("[data-duration]").forEach(choice => choice.classList.remove("selected"));
+      button.classList.add("selected");
+      appState.setup.durationMinutes = Number(button.dataset.duration);
+    }
+
+    function handleMultiChoice(event) {
+      const button = event.target.closest(".choice");
+      if (!button || button.dataset.duration) return;
+
+      button.classList.toggle("selected");
+      syncSetupChoices();
+    }
+
+    function syncSetupChoices() {
+      appState.setup.operations = getSelectedValues("[data-operation]", "operation");
+      appState.setup.digitLevels = getSelectedValues("[data-digits]", "digits").map(Number);
+    }
+
+    function getSelectedValues(selector, dataKey) {
+      return Array.from(document.querySelectorAll(selector + ".selected")).map(button => button.dataset[dataKey]);
+    }
+
+    function startGame() {
+      syncSetupChoices();
+
+      appState.setup.operations = appState.setup.operations.length
+        ? appState.setup.operations
+        : Object.keys(operations);
+
+      appState.setup.digitLevels = appState.setup.digitLevels.length
+        ? appState.setup.digitLevels
+        : [1, 2, 3];
+
+      appState.session = {
+        candies: 0,
+        questionsAttempted: 0,
+        correctAnswers: 0,
+        secondsLeft: appState.setup.durationMinutes * 60,
+        totalSeconds: appState.setup.durationMinutes * 60,
+        timerId: null,
+        endGraceTimerId: null,
+        currentQuestion: null,
+        askedQuestionKeys: new Set(),
+        ended: false,
+        saved: false,
+        history: []
+      };
+
+      candyDisplay.textContent = "0";
+      questionsSolvedDisplay.textContent = "0";
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      showScreen(gameScreen);
+      updateTimerDisplay();
+      showNextQuestion();
+      answerInput.focus();
+      appState.session.timerId = setInterval(tickTimer, 1000);
+    }
+
+    function tickTimer() {
+      appState.session.secondsLeft -= 1;
+      updateTimerDisplay();
+
+      if (appState.session.secondsLeft <= 0) {
+        beginEndGracePeriod();
+      }
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(Math.max(appState.session.secondsLeft, 0) / 60);
+      const seconds = Math.max(appState.session.secondsLeft, 0) % 60;
+      const timeLeft = Math.max(appState.session.secondsLeft, 0) / appState.session.totalSeconds;
+      timerDisplay.textContent = minutes + ":" + String(seconds).padStart(2, "0");
+      timerStat.style.setProperty("--time-left", String(timeLeft));
+    }
+
+    function submitAnswer(event) {
+      event.preventDefault();
+      if (!appState.session.currentQuestion || appState.session.saved) return;
+
+      const rawAnswer = answerInput.value.trim();
+      if (rawAnswer === "") {
+        feedback.textContent = "Pop in a number when you are ready.";
+        feedback.className = "feedback try";
+        return;
+      }
+
+      const guess = Number(rawAnswer);
+      const question = appState.session.currentQuestion;
+      const isCorrect = guess === question.answer;
+      appState.session.questionsAttempted += 1;
+      questionsSolvedDisplay.textContent = String(appState.session.questionsAttempted);
+
+      appState.session.history.push({
+        operation: question.operation,
+        digits: question.digits,
+        prompt: question.prompt,
+        answer: question.answer,
+        guess,
+        correct: isCorrect,
+        answeredAt: new Date().toISOString()
+      });
+
+      if (isCorrect) {
+        appState.session.candies += 1;
+        appState.session.correctAnswers += 1;
+        candyDisplay.textContent = String(appState.session.candies);
+        feedback.textContent = randomItem(["Sweet! One candy for you!", "Great job!", "You got it! Yum!"]);
+        feedback.className = "feedback good";
+      } else {
+        feedback.textContent = randomItem(["Nice try. The answer was " + question.answer + ".", "Almost! It was " + question.answer + ".", "Good thinking. This one was " + question.answer + "."]);
+        feedback.className = "feedback try";
+      }
+
+      if (appState.session.secondsLeft <= 0) {
+        endGame();
+        return;
+      }
+
+      showNextQuestion();
+    }
+
+    function showNextQuestion() {
+      const question = createUniqueQuestion();
+      appState.session.currentQuestion = question;
+      questionText.textContent = question.prompt;
+      answerInput.value = "";
+      answerInput.focus();
+    }
+
+    function createUniqueQuestion() {
+      for (let attempt = 0; attempt < 250; attempt += 1) {
+        const operation = randomItem(appState.setup.operations);
+        const digits = randomItem(appState.setup.digitLevels);
+        const question = createQuestion(operation, digits);
+        const key = question.operation + ":" + question.left + ":" + question.right;
+
+        if (!appState.session.askedQuestionKeys.has(key)) {
+          appState.session.askedQuestionKeys.add(key);
+          return question;
+        }
+      }
+
+      appState.session.askedQuestionKeys.clear();
+      const operation = randomItem(appState.setup.operations);
+      const digits = randomItem(appState.setup.digitLevels);
+      const question = createQuestion(operation, digits);
+      appState.session.askedQuestionKeys.add(question.operation + ":" + question.left + ":" + question.right);
+      return question;
+    }
+
+    function createQuestion(operation, digits) {
+      if (operation === "addition") return makeAddition(digits);
+      if (operation === "subtraction") return makeSubtraction(digits);
+      if (operation === "multiplication") return makeMultiplication(digits);
+      return makeDivision(digits);
+    }
+
+    function makeAddition(digits) {
+      const left = numberForDigits(digits);
+      const right = numberForDigits(digits);
+      return formatQuestion("addition", digits, left, right, left + right);
+    }
+
+    function makeSubtraction(digits) {
+      const first = numberForDigits(digits);
+      const second = numberForDigits(digits);
+      const left = Math.max(first, second);
+      const right = Math.min(first, second);
+      return formatQuestion("subtraction", digits, left, right, left - right);
+    }
+
+    function makeMultiplication(digits) {
+      const left = numberForDigits(digits);
+      const right = multiplicationPartner(digits);
+      return formatQuestion("multiplication", digits, left, right, left * right);
+    }
+
+    function makeDivision(digits) {
+      const divisor = randomInt(2, 9);
+      const left = divisibleNumberForDigits(digits, divisor);
+      const answer = left / divisor;
+      return formatQuestion("division", digits, left, divisor, answer);
+    }
+
+    function formatQuestion(operation, digits, left, right, answer) {
+      return {
+        operation,
+        digits,
+        left,
+        right,
+        answer,
+        prompt: left + " " + operations[operation].symbol + " " + right
+      };
+    }
+
+    function numberForDigits(digits) {
+      if (digits === 1) return randomInt(0, 9);
+      if (digits === 2) return randomInt(10, 99);
+      return randomInt(100, 999);
+    }
+
+    // Keeps multiplication approachable while the first number follows the selected digit size.
+    function multiplicationPartner(digits) {
+      if (digits === 1) return randomInt(0, 9);
+      if (digits === 2) return randomInt(2, 9);
+      return randomInt(2, 5);
+    }
+
+    function divisibleNumberForDigits(digits, divisor) {
+      const min = digits === 1 ? 1 : Math.pow(10, digits - 1);
+      const max = Math.pow(10, digits) - 1;
+      const minAnswer = Math.ceil(min / divisor);
+      const maxAnswer = Math.floor(max / divisor);
+      return randomInt(minAnswer, maxAnswer) * divisor;
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomItem(items) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    function endGame() {
+      if (appState.session.ended) return;
+      appState.session.ended = true;
+      clearInterval(appState.session.timerId);
+      clearTimeout(appState.session.endGraceTimerId);
+      if (!appState.session.saved) {
+        const sessionRecord = createSessionRecord();
+        appState.lastCompletedSession = sessionRecord;
+        memorySessions = mergeSessions(memorySessions.concat(sessionRecord));
+        try {
+          saveSession(sessionRecord);
+        } catch (error) {
+          console.warn("Progress could not be saved on this device.", error);
+        }
+        appState.session.saved = true;
+      }
+      endTitle.textContent = getEndMessage(appState.session.candies);
+      finalCandyCount.textContent = String(appState.session.candies);
+      finalQuestionCount.textContent = String(appState.session.questionsAttempted);
+      finalCorrectCount.textContent = String(appState.session.correctAnswers);
+      updateCandyPrize(appState.session.candies);
+      showScreen(endScreen);
+    }
+
+    function createSessionRecord() {
+      return {
+        timestamp: new Date().toISOString(),
+        durationMinutes: appState.setup.durationMinutes,
+        operations: appState.setup.operations.slice(),
+        digitLevels: appState.setup.digitLevels.slice(),
+        questionsAttempted: appState.session.questionsAttempted,
+        correctAnswers: appState.session.correctAnswers,
+        candiesEarned: appState.session.candies
+      };
+    }
+
+    function beginEndGracePeriod() {
+      if (appState.session.ended) return;
+      clearInterval(appState.session.timerId);
+      appState.session.secondsLeft = 0;
+      updateTimerDisplay();
+
+      if (appState.session.endGraceTimerId) return;
+
+      appState.session.endGraceTimerId = setTimeout(() => {
+        endGame();
+      }, 700);
+    }
+
+    function getEndMessage(candies) {
+      if (candies === 0) return randomItem(keepTryingMessages);
+      if (candies < 10) return randomItem(lowCandyMessages);
+      return randomItem(celebrationMessages);
+    }
+
+    function updateCandyPrize(count) {
+      candyLabel.textContent = count > 0 ? "Candy power!" : "Ready for candy!";
+    }
+
+    function showHome() {
+      clearInterval(appState.session.timerId);
+      clearTimeout(appState.session.endGraceTimerId);
+      feedback.textContent = "";
+      renderHome();
+      showScreen(homeScreen);
+    }
+
+    function showProgress() {
+      renderProgress();
+      showScreen(progressScreen);
+    }
+
+    function showSetup() {
+      clearInterval(appState.session.timerId);
+      clearTimeout(appState.session.endGraceTimerId);
+      feedback.textContent = "";
+      showScreen(setupScreen);
+    }
+
+    function showScreen(screen) {
+      [homeScreen, progressScreen, setupScreen, gameScreen, endScreen].forEach(item => item.classList.remove("active"));
+      screen.classList.add("active");
+    }
+  </script>
+</body>
+</html>

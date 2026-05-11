@@ -1,121 +1,80 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { auth, googleProvider } from './firebase'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [authMessage, setAuthMessage] = useState('')
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+      setIsLoading(false)
+    })
+
+    return unsubscribe
+  }, [])
+
+  const handleSignIn = async () => {
+    setAuthMessage('')
+
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (error) {
+      setAuthMessage('Sign in did not work this time. Please try again.')
+      console.error('Google sign in failed:', error)
+    }
+  }
+
+  const handleSignOut = async () => {
+    setAuthMessage('')
+
+    try {
+      await signOut(auth)
+    } catch (error) {
+      setAuthMessage('Sign out did not work this time. Please try again.')
+      console.error('Sign out failed:', error)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="login-page">
+      <section className="login-card" aria-live="polite">
+        <div className="candy-dots" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        <h1>Fun with Math</h1>
+        <p className="tagline">Sign in to save your candy adventures.</p>
+
+        {isLoading ? (
+          <p className="status-text">Checking your sign in...</p>
+        ) : user ? (
+          <div className="user-panel">
+            <p className="welcome-text">Hi, {user.displayName || 'math friend'}!</p>
+            <div className="user-details">
+              <span>Name</span>
+              <strong>{user.displayName || 'No name shared'}</strong>
+              <span>Email</span>
+              <strong>{user.email}</strong>
+            </div>
+            <button className="secondary-button" type="button" onClick={handleSignOut}>
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <button className="primary-button" type="button" onClick={handleSignIn}>
+            Sign in with Google
+          </button>
+        )}
+
+        {authMessage && <p className="status-text">{authMessage}</p>}
       </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 

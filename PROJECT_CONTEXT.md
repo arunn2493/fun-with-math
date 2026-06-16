@@ -170,6 +170,23 @@ Firebase user profile persistence:
 - Returning users update `lastLoginAt` on each Google sign-in.
 - The app remains login-only; gameplay and progress screens are still deferred.
 
+### V2.3
+
+Firestore security and setup documentation:
+- Added repo-tracked Firestore rules in `firestore.rules`.
+- Added `firebase.json` so Firebase tooling knows which rules file to deploy.
+- Added `FIREBASE_SETUP.md` with the current Firebase project ID, rules behavior, and local test flow.
+- Rules allow a signed-in user to read, create, and update only their own `users/{uid}` profile document.
+- Rules validate the V2.2 profile shape:
+  - `uid`
+  - `displayName`
+  - `email`
+  - `photoURL`
+  - `createdAt`
+  - `lastLoginAt`
+- Rules preserve `createdAt`, refresh `lastLoginAt`, and deny client deletes.
+- The app remains login-only; gameplay and progress screens are still deferred.
+
 ## Current Architecture
 
 ### V1 Architecture
@@ -236,6 +253,10 @@ V2 is a React project:
   - Sign-out with `signOut`
   - Auth-state listening with `onAuthStateChanged`
   - Firestore profile save to `users/{uid}` after Google login
+- Root Firebase setup files:
+  - `firebase.json`
+  - `firestore.rules`
+  - `FIREBASE_SETUP.md`
 
 V2 is intended to move the product beyond local-only state toward authenticated user progress.
 
@@ -259,13 +280,15 @@ V2 is intended to move the product beyond local-only state toward authenticated 
 ## Current V2 Goals
 
 Immediate V2 goal:
-- Prove Firebase Google Login works and save a Firebase user profile after login.
+- Keep Firebase Google Login working, save Firebase user profiles, and protect user profile documents with repo-tracked Firestore rules.
 
 Current V2 scope:
 - Keep "Sign in with Google."
 - Keep "Sign out."
 - Show logged-in user's name and email.
 - Save `users/{uid}` in Firestore after Google login.
+- Track Firestore security rules in the repo.
+- Document Firebase setup and rule deployment.
 - Use Firebase Auth:
   - `signInWithPopup`
   - `signOut`
@@ -276,6 +299,7 @@ Current V2 scope:
   - `setDoc`
   - `updateDoc`
   - `serverTimestamp`
+- Use Firestore security rules to restrict `users/{uid}` access to the signed-in owner.
 - Keep UI simple and kid-friendly.
 - Do not build the math game yet.
 
@@ -399,7 +423,7 @@ The progress screen intentionally does not show correct answers in recent sessio
 - If no digit level is selected in later V1.2 behavior, mix digit levels.
 - The app should support direct browser opening for V1.
 - V2 should first prove login before rebuilding the game.
-- Firebase Auth and user profile persistence are the current technical milestones.
+- Firebase Auth, user profile persistence, and Firestore security rules are the current technical milestones.
 - Firestore-backed progress should come after auth works.
 
 ## Repository and Version Folder Notes
@@ -440,5 +464,7 @@ V2:
 - Firebase config exists.
 - Google Login app shell exists.
 - Firestore user profile persistence exists.
-- Current V2.2 app is still login-only.
-- Next step is runtime verification of Google login and Firestore writes, then V3 authenticated progress.
+- Firestore user-profile rules exist in the repo.
+- Firebase setup documentation exists.
+- Current V2.3 app is still login-only.
+- Next step is deploying Firestore rules and then V3 authenticated progress.

@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasOnlyUserProfileFields() {
+      return request.resource.data.keys().hasOnly([
+        'uid',
+        'displayName',
+        'email',
+        'photoURL',
+        'createdAt',
+        'lastLoginAt'
+      ]);
+    }
+
+    function hasRequiredUserProfileFields() {
+      return request.resource.data.keys().hasAll([
+        'uid',
+        'displayName',
+        'email',
+        'photoURL',
+        'createdAt',
+        'lastLoginAt'
+      ]);
+    }
+
+    function hasValidUserProfile(userId) {
+      return hasOnlyUserProfileFields()
+        && hasRequiredUserProfileFields()
+        && request.resource.data.uid == userId
+        && request.resource.data.displayName is string
+        && request.resource.data.email is string
+        && request.resource.data.photoURL is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.lastLoginAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && hasValidUserProfile(userId)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.lastLoginAt == request.time;
+
+      allow update: if isOwner(userId)
+        && resource.data.uid == userId
+        && hasValidUserProfile(userId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.lastLoginAt == request.time;
+
+      allow delete: if false;
+    }
+  }
+}

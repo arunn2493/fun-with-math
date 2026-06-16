@@ -280,7 +280,7 @@ V2 is intended to move the product beyond local-only state toward authenticated 
 ## Current V2 Goals
 
 Immediate V2 goal:
-- Keep Firebase Google Login working, save Firebase user profiles, and protect user profile documents with repo-tracked Firestore rules.
+- Complete the login-only Firebase foundation before gameplay moves into React.
 
 Current V2 scope:
 - Keep "Sign in with Google."
@@ -308,21 +308,86 @@ Why this matters:
 - Once login works, progress can move from localStorage to Firestore.
 - Parent/child profile concepts can be introduced later.
 
+## Current V3 Goals
+
+Immediate V3 goal:
+- Rebuild the V1.2 math practice experience inside the V2 React app and save completed sessions to Firestore for signed-in users.
+
+Current V3 scope:
+- Keep Google login and sign-out from V2.
+- Add a signed-in home screen with:
+  - App title.
+  - "Play Now" primary action.
+  - "View Progress" secondary action.
+  - Gentle last-session candy prompt when progress exists.
+- Rebuild the V1.2 setup flow in React:
+  - Duration selector: 1-5 minutes.
+  - Operation selector: addition, subtraction, multiplication, division.
+  - Digit selector: 1 digit, 2 digits, 3 digits.
+  - If no operation is selected, mix all operations.
+  - If no digit level is selected, mix digit levels.
+- Rebuild the V1.2 game flow in React:
+  - Countdown timer.
+  - Candies collected.
+  - Question counter.
+  - One question at a time.
+  - Answer input with submit and Enter key support.
+  - Input auto-focus.
+  - Back/home control from game screen.
+  - Reliable timer-end result transition.
+  - Short grace handling for final Enter/Submit at 0:00.
+- Rebuild the V1.2 result flow in React:
+  - Candies collected.
+  - Questions attempted.
+  - Correct answer count may exist internally, but should not be emphasized as the main reward.
+  - Encouraging end messages based on candies earned.
+- Rebuild the V1.2 progress flow in React:
+  - Lifetime candies.
+  - Last session candies.
+  - Last 5 sessions.
+  - Recent session cards showing date/time, candies earned, questions attempted, duration, operations, and digit levels.
+  - Do not emphasize correct answers in recent session cards.
+- Save completed sessions to Firestore under the signed-in user:
+  - `users/{uid}/sessions/{sessionId}`
+- Read recent sessions and lifetime candies from Firestore for signed-in users.
+- Keep the app friendly and low-pressure.
+- Keep Firestore rules updated for any new session collection path.
+
+V3 session document shape:
+- `id`
+- `uid`
+- `createdAt`
+- `candies`
+- `questionsAttempted`
+- `correctAnswers`
+- `durationMinutes`
+- `operations`
+- `digitLevels`
+
+V3 out of scope:
+- Parent dashboard.
+- Multiple child profiles.
+- Classroom mode.
+- Skill recommendations.
+- Operation-level analytics dashboards.
+- Migration of existing V1 localStorage data.
+- Offline sync beyond graceful UI messaging.
+
 ## Future Roadmap
 
 ### V3 - Authenticated Progress
 
 Goals:
-- Store session history in Firestore.
+- Store session history in Firestore at `users/{uid}/sessions/{sessionId}`.
 - Link progress to authenticated users.
 - Preserve the V1.2 habit loop with cloud persistence.
-- Add migration or coexistence path from localStorage to Firestore.
+- Keep progress candy-first and emotionally safe.
 
 Potential features:
 - Save completed sessions to Firestore.
 - Fetch lifetime candies from Firestore.
 - Show recent sessions across devices.
-- Keep local fallback for offline or signed-out use.
+- Keep graceful messaging for unavailable Firestore reads/writes.
 
 ### V4 - Practice Intelligence
 

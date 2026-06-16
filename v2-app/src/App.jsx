@@ -1,11 +1,36 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
-import { auth, googleProvider } from './firebase'
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import { auth, db, googleProvider } from './firebase'
 import './App.css'
+
+async function saveUserProfile(firebaseUser) {
+  const userRef = doc(db, 'users', firebaseUser.uid)
+  const userProfile = {
+    uid: firebaseUser.uid,
+    displayName: firebaseUser.displayName || '',
+    email: firebaseUser.email || '',
+    photoURL: firebaseUser.photoURL || '',
+    lastLoginAt: serverTimestamp(),
+  }
+
+  const userSnapshot = await getDoc(userRef)
+
+  if (userSnapshot.exists()) {
+    await updateDoc(userRef, userProfile)
+    return
+  }
+
+  await setDoc(userRef, {
+    ...userProfile,
+    createdAt: serverTimestamp(),
+  })
+}
 
 function App() {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
 
   useEffect(() => {
@@ -19,12 +44,17 @@ function App() {
 
   const handleSignIn = async () => {
     setAuthMessage('')
+    setIsSavingProfile(true)
 
     try {
-      await signInWithPopup(auth, googleProvider)
+      const result = await signInWithPopup(auth, googleProvider)
+      await saveUserProfile(result.user)
+      setAuthMessage('Your candy adventure is ready to save.')
     } catch (error) {
       setAuthMessage('Sign in did not work this time. Please try again.')
       console.error('Google sign in failed:', error)
+    } finally {
+      setIsSavingProfile(false)
     }
   }
 
@@ -67,8 +97,13 @@ function App() {
             </button>
           </div>
         ) : (
-          <button className="primary-button" type="button" onClick={handleSignIn}>
-            Sign in with Google
+          <button
+            className="primary-button"
+            type="button"
+            onClick={handleSignIn}
+            disabled={isSavingProfile}
+          >
+            {isSavingProfile ? 'Getting ready...' : 'Sign in with Google'}
           </button>
         )}
 

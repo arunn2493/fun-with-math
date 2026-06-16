@@ -92,6 +92,12 @@ h1 {
   transform: translateY(-2px);
 }
 
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.74;
+  transform: none;
+}
+
 .user-panel {
   margin-top: 26px;
 }

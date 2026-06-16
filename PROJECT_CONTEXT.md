@@ -145,6 +145,31 @@ Local progress and habit loop:
 - Fixed timer-end behavior so the game reliably moves to the result page.
 - Added short grace handling for final Enter/Submit at 0:00.
 
+### V2.1
+
+React/Firebase login foundation:
+- Added V2 React app shell in `v2-app`.
+- Added Firebase Auth Google sign-in.
+- Added sign-out.
+- Added auth-state tracking with `onAuthStateChanged`.
+- Shows signed-in user's display name and email.
+- Keeps the app login-only; the math game has not been rebuilt in V2 yet.
+
+### V2.2
+
+Firebase user profile persistence:
+- After Google login, the app saves a user profile to Firestore at `users/{uid}`.
+- User profile fields:
+  - `uid`
+  - `displayName`
+  - `email`
+  - `photoURL`
+  - `createdAt`
+  - `lastLoginAt`
+- Existing user documents keep their original `createdAt`.
+- Returning users update `lastLoginAt` on each Google sign-in.
+- The app remains login-only; gameplay and progress screens are still deferred.
+
 ## Current Architecture
 
 ### V1 Architecture
@@ -206,6 +231,11 @@ V2 is a React project:
   - `auth`
   - `googleProvider`
   - `db`
+- `src/App.jsx` currently handles:
+  - Google sign-in with `signInWithPopup`
+  - Sign-out with `signOut`
+  - Auth-state listening with `onAuthStateChanged`
+  - Firestore profile save to `users/{uid}` after Google login
 
 V2 is intended to move the product beyond local-only state toward authenticated user progress.
 
@@ -229,16 +259,23 @@ V2 is intended to move the product beyond local-only state toward authenticated 
 ## Current V2 Goals
 
 Immediate V2 goal:
-- Prove Firebase Google Login works.
+- Prove Firebase Google Login works and save a Firebase user profile after login.
 
 Current V2 scope:
-- Add "Sign in with Google."
-- Add "Sign out."
+- Keep "Sign in with Google."
+- Keep "Sign out."
 - Show logged-in user's name and email.
+- Save `users/{uid}` in Firestore after Google login.
 - Use Firebase Auth:
   - `signInWithPopup`
   - `signOut`
   - `onAuthStateChanged`
+- Use Firebase Firestore:
+  - `doc`
+  - `getDoc`
+  - `setDoc`
+  - `updateDoc`
+  - `serverTimestamp`
 - Keep UI simple and kid-friendly.
 - Do not build the math game yet.
 
@@ -362,7 +399,7 @@ The progress screen intentionally does not show correct answers in recent sessio
 - If no digit level is selected in later V1.2 behavior, mix digit levels.
 - The app should support direct browser opening for V1.
 - V2 should first prove login before rebuilding the game.
-- Firebase Auth is the next technical milestone.
+- Firebase Auth and user profile persistence are the current technical milestones.
 - Firestore-backed progress should come after auth works.
 
 ## Repository and Version Folder Notes
@@ -401,7 +438,7 @@ V1.2:
 
 V2:
 - Firebase config exists.
-- Next step is to apply the prepared Google Login app shell to:
-  - `v2-app/src/App.jsx`
-  - `v2-app/src/App.css`
-
+- Google Login app shell exists.
+- Firestore user profile persistence exists.
+- Current V2.2 app is still login-only.
+- Next step is runtime verification of Google login and Firestore writes, then V3 authenticated progress.

@@ -29,35 +29,31 @@ v1/index.html
 
 It is a single-file HTML/CSS/JavaScript app with local progress saved on the device.
 
-### V2.3
+### V3
 
-V2.3 is the current React/Firebase foundation. It lives in:
+V3 is the current React/Firebase app. It lives in:
 
 ```text
 v2-app/
 ```
 
-It is intentionally login-only for now. The math game has not been rebuilt in React yet.
+V3 includes:
 
-V2.3 includes:
-
-- React + Vite app shell.
+- React + Vite app.
 - Firebase Google sign-in.
 - Sign-out.
 - Auth-state tracking.
 - Firestore user profile persistence at `users/{uid}`.
+- Signed-in home screen.
+- React setup, gameplay, result, and progress screens.
+- Firestore session persistence at `users/{uid}/sessions/{sessionId}`.
+- Lifetime candies and recent sessions loaded from Firestore.
 - Repo-tracked Firestore security rules.
 - Firebase setup documentation.
 
-### Next: V3
+### Next: V4
 
-V3 will rebuild the V1.2 math practice experience inside the React app and save completed sessions to Firestore for signed-in users.
-
-Planned session path:
-
-```text
-users/{uid}/sessions/{sessionId}
-```
+V4 will make practice more adaptive by tracking progress by operation and digit level and offering gentle practice suggestions.
 
 ## Repository Structure
 
@@ -198,19 +194,18 @@ npx firebase-tools deploy --only firestore:rules --project fun-with-math-bd66c
 - Denied client-side profile deletes.
 - Deployed the Firestore rules to Firebase.
 
-## V3 Scope
+### V3
 
-V3 will:
-
-- Keep Google login and sign-out.
-- Add a signed-in home screen.
-- Rebuild setup, gameplay, results, and progress in React.
-- Save completed sessions to Firestore.
+- Rebuilt the V1.2 math practice flow in React.
+- Kept Google login and sign-out.
+- Added a signed-in home screen.
+- Added setup, gameplay, results, and progress screens.
+- Saved completed sessions to Firestore at `users/{uid}/sessions/{sessionId}`.
 - Read recent sessions and lifetime candies from Firestore.
-- Keep the same candy-first, low-pressure experience from V1.2.
-- Update Firestore rules for session data.
+- Updated Firestore rules for session data.
+- Kept the same candy-first, low-pressure experience from V1.2.
 
-V3 will not include:
+V3 does not include:
 
 - Parent dashboard.
 - Multiple child profiles.

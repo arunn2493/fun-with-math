@@ -187,6 +187,46 @@ Firestore security and setup documentation:
 - Rules preserve `createdAt`, refresh `lastLoginAt`, and deny client deletes.
 - The app remains login-only; gameplay and progress screens are still deferred.
 
+### V3
+
+Authenticated React gameplay and progress:
+- Rebuilt the V1.2 math practice experience inside the React app.
+- Kept Firebase Google sign-in and sign-out.
+- Added signed-in Home screen with:
+  - App title.
+  - "Play Now" primary action.
+  - "View Progress" secondary action.
+  - Gentle last-session candy prompt when progress exists.
+- Rebuilt setup flow in React:
+  - Duration selector: 1-5 minutes.
+  - Operation selector: addition, subtraction, multiplication, division.
+  - Digit selector: 1 digit, 2 digits, 3 digits.
+  - Empty operation selection mixes all operations.
+  - Empty digit selection mixes all digit levels.
+- Rebuilt game flow in React:
+  - Countdown timer.
+  - Candies collected.
+  - Question counter.
+  - One question at a time.
+  - Answer input with submit and Enter key support.
+  - Input auto-focus.
+  - Home control from game screen.
+  - Timer-end result transition.
+  - Short grace handling for final submit at 0:00.
+- Rebuilt result flow in React:
+  - Candies collected.
+  - Questions attempted.
+  - Correct answer count available on result, but candies remain the main reward.
+  - Encouraging end messages based on candies earned.
+- Rebuilt progress flow in React:
+  - Lifetime candies.
+  - Last session candies.
+  - Last 5 sessions.
+  - Recent session cards show date/time, candies earned, questions attempted, duration, operations, and digit levels.
+- Saves completed sessions to Firestore at `users/{uid}/sessions/{sessionId}`.
+- Reads recent sessions and lifetime candies from Firestore for signed-in users.
+- Updated Firestore rules for the new session collection path.
+
 ## Current Architecture
 
 ### V1 Architecture
@@ -258,7 +298,7 @@ V2 is a React project:
   - `firestore.rules`
   - `FIREBASE_SETUP.md`
 
-V2 is intended to move the product beyond local-only state toward authenticated user progress.
+V3 moves the product beyond local-only state into authenticated React gameplay and Firestore-backed progress.
 
 ## Tech Stack
 
@@ -270,7 +310,7 @@ V2 is intended to move the product beyond local-only state toward authenticated 
 - No backend.
 - No external libraries.
 
-### V2
+### V2+
 - React.
 - Vite.
 - Firebase Auth.
@@ -375,20 +415,6 @@ V3 out of scope:
 
 ## Future Roadmap
 
-### V3 - Authenticated Progress
-
-Goals:
-- Store session history in Firestore at `users/{uid}/sessions/{sessionId}`.
-- Link progress to authenticated users.
-- Preserve the V1.2 habit loop with cloud persistence.
-- Keep progress candy-first and emotionally safe.
-
-Potential features:
-- Save completed sessions to Firestore.
-- Fetch lifetime candies from Firestore.
-- Show recent sessions across devices.
-- Keep graceful messaging for unavailable Firestore reads/writes.
-
 ### V4 - Practice Intelligence
 
 Goals:
@@ -487,9 +513,9 @@ The progress screen intentionally does not show correct answers in recent sessio
 - If no operation is selected, default to all operations.
 - If no digit level is selected in later V1.2 behavior, mix digit levels.
 - The app should support direct browser opening for V1.
-- V2 should first prove login before rebuilding the game.
-- Firebase Auth, user profile persistence, and Firestore security rules are the current technical milestones.
-- Firestore-backed progress should come after auth works.
+- V2 proved login before rebuilding the game.
+- V3 keeps Firebase Auth and adds Firestore-backed session progress.
+- Firestore rules should evolve with each new data path before launch.
 
 ## Repository and Version Folder Notes
 
@@ -500,6 +526,8 @@ Versioning convention:
 - MVP remains in:
   - `fun-with-math/mvp/index.html`
 - React V2 work lives in:
+  - `fun-with-math/v2-app`
+- React V3 work continues in:
   - `fun-with-math/v2-app`
 
 Current recommended structure:
@@ -525,11 +553,13 @@ V1.2:
 - Needs to be copied into the repo path when write permissions allow:
   - `fun-with-math/v1/index.html`
 
-V2:
+V3:
 - Firebase config exists.
 - Google Login app shell exists.
 - Firestore user profile persistence exists.
 - Firestore user-profile rules exist in the repo.
 - Firebase setup documentation exists.
-- Current V2.3 app is still login-only.
-- Next step is deploying Firestore rules and then V3 authenticated progress.
+- React gameplay, result, and progress screens exist.
+- Completed sessions save to `users/{uid}/sessions/{sessionId}`.
+- Firestore rules include session creates and reads.
+- Next step is deploying the updated V3 Firestore rules and runtime testing authenticated session saves.

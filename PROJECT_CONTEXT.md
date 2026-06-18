@@ -218,11 +218,18 @@ Authenticated React gameplay and progress:
   - Questions attempted.
   - Correct answer count available on result, but candies remain the main reward.
   - Encouraging end messages based on candies earned.
+  - Post-game result uses a compact 5-star surprise animation based on correct-answer percentage.
+  - Result layout keeps visual focus on candies collected.
 - Rebuilt progress flow in React:
   - Lifetime candies.
   - Last session candies.
   - Last 5 sessions.
-  - Recent session cards show date/time, candies earned, questions attempted, duration, operations, and digit levels.
+  - Recent sessions use a Candy Timeline layout instead of a table.
+  - The main progress page shows the latest 5 sessions.
+  - Older sessions live on a separate "All Candy Rounds" screen.
+  - Timeline cards are intentionally compact so the latest 5 sessions can fit without much scrolling.
+  - Timeline cards show candies earned, date, duration, questions attempted, compact operation summary, and compact digit summary.
+  - Full mixed-operation rounds show "All operations"; partial operation rounds use math symbols.
 - Saves completed sessions to Firestore at `users/{uid}/sessions/{sessionId}`.
 - Reads recent sessions and lifetime candies from Firestore for signed-in users.
 - Updated Firestore rules for the new session collection path.
@@ -421,6 +428,7 @@ Goals:
 - Make practice more adaptive without feeling clinical.
 - Track progress by operation and digit level.
 - Suggest gentle practice plans.
+- Keep the child-facing UI joyful, bold, visually consistent, and pressure-free.
 
 Potential features:
 - Operation-level progress:
@@ -428,14 +436,52 @@ Potential features:
   - Subtraction.
   - Multiplication.
   - Division.
+- Operation-level stats per completed session:
+  - Questions attempted.
+  - Correct answers.
 - Digit-level progress:
   - 1 digit.
   - 2 digits.
   - 3 digits.
+- Digit-level stats per completed session:
+  - Questions attempted.
+  - Correct answers.
+- Aggregate skill summaries across sessions:
+  - Total attempted by operation.
+  - Total correct by operation.
+  - Total attempted by digit level.
+  - Total correct by digit level.
 - Soft recommendations:
   - "Try some subtraction candies today."
   - "Want to practice 2-digit numbers?"
 - Avoid labels like "weakness" or "failed."
+- Avoid harsh accuracy framing in child-facing screens.
+- Keep stats available for intelligence and future parent views without making the child experience feel like a report card.
+
+Potential V4 session document additions:
+- `operationStats`
+  - `addition.attempted`
+  - `addition.correct`
+  - `subtraction.attempted`
+  - `subtraction.correct`
+  - `multiplication.attempted`
+  - `multiplication.correct`
+  - `division.attempted`
+  - `division.correct`
+- `digitStats`
+  - `1.attempted`
+  - `1.correct`
+  - `2.attempted`
+  - `2.correct`
+  - `3.attempted`
+  - `3.correct`
+
+V4 UX direction:
+- The app should remain visually pleasing for children.
+- Button labels should be bold, clear, and easy to tap.
+- The theme should remain consistent across Home, Setup, Game, Result, and Progress.
+- Practice suggestions should feel like invitations, not judgments.
+- Progress language should stay candy-first and confidence-building.
 
 ### V5 - Parent and Classroom Support
 

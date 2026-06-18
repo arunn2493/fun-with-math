@@ -145,14 +145,14 @@ function formatSessionDate(createdAt) {
   })
 }
 
-function formatOperations(selectedOperations) {
-  return selectedOperations.map((operation) => operations[operation]?.label || operation).join(', ')
+function formatOperationPill(selectedOperations) {
+  if (selectedOperations.length === operationKeys.length) return 'All operations'
+
+  return selectedOperations.map((operation) => operations[operation]?.symbol || operation).join(' ')
 }
 
-function formatDigitLevels(selectedDigits) {
-  return selectedDigits
-    .map((digits) => `${digits} ${Number(digits) === 1 ? 'digit' : 'digits'}`)
-    .join(', ')
+function formatDigitPill(selectedDigits) {
+  return selectedDigits.slice().sort().join('-')
 }
 
 function getEndMessage(candies) {
@@ -542,6 +542,10 @@ function App() {
     setScreen('progress')
   }
 
+  const showAllRounds = () => {
+    setScreen('allRounds')
+  }
+
   const refreshProgress = async () => {
     if (!user) return
 
@@ -605,12 +609,12 @@ function App() {
           </div>
           <CandyDots />
           <h1 className="title">Fun with Math</h1>
+          <p className="subtitle">Hi, {user.displayName || 'math friend'}!</p>
           <p className="home-message">
             {lastSession
               ? `Last time you earned ${lastSession.candies} candies. Can you earn more today?`
               : 'Collect candies while practicing math!'}
           </p>
-          <p className="subtitle">Hi, {user.displayName || 'math friend'}!</p>
           <button className="primary" type="button" onClick={showSetup}>
             Play Now
           </button>
@@ -641,23 +645,31 @@ function App() {
           </div>
           {isProgressLoading && <p className="status-text">Gathering candies...</p>}
           {progressMessage && <p className="status-text">{progressMessage}</p>}
-          <div className="session-list">
-            {sessions.length === 0 && !isProgressLoading ? (
-              <div className="empty-progress">Play a round to start collecting candies here.</div>
-            ) : (
-              sessions.slice(0, 5).map((session) => (
-                <article className="session-card" key={session.id}>
-                  <p className="session-title">{formatSessionDate(session.createdAt)}</p>
-                  <div className="session-details">
-                    <span>Candies earned: {session.candies}</span>
-                    <span>Questions attempted: {session.questionsAttempted}</span>
-                    <span>Duration: {session.durationMinutes} min</span>
-                    <span>Operations: {formatOperations(session.operations || [])}</span>
-                    <span>Digits: {formatDigitLevels(session.digitLevels || [])}</span>
-                  </div>
-                </article>
-              ))
-            )}
+          <h2 className="timeline-heading">Recent Candy Rounds</h2>
+          <SessionTimeline sessions={sessions.slice(0, 5)} isProgressLoading={isProgressLoading} />
+          {sessions.length > 5 && (
+            <button className="secondary timeline-more" type="button" onClick={showAllRounds}>
+              View all candy rounds
+            </button>
+          )}
+        </section>
+      )}
+
+      {screen === 'allRounds' && (
+        <section className="card progress-card" aria-live="polite">
+          <div className="progress-actions">
+            <button className="small-button" type="button" onClick={showProgress}>
+              Back
+            </button>
+            <button className="small-button" type="button" onClick={refreshProgress}>
+              Refresh
+            </button>
+          </div>
+          <h1 className="page-title">All Candy Rounds</h1>
+          {isProgressLoading && <p className="status-text">Gathering candies...</p>}
+          {progressMessage && <p className="status-text">{progressMessage}</p>}
+          <div className="timeline-scroll">
+            <SessionTimeline sessions={sessions} isProgressLoading={isProgressLoading} />
           </div>
         </section>
       )}
@@ -776,21 +788,17 @@ function App() {
       {screen === 'result' && resultSession && (
         <section className="card result-card" aria-live="polite">
           <h1 className="end-title">{getEndMessage(resultSession.candies)}</h1>
+          <StarRating
+            correctAnswers={resultSession.correctAnswers}
+            questionsAttempted={resultSession.questionsAttempted}
+          />
           <div className="candies-big">
             <strong>{resultSession.candies}</strong>
             <span>{resultSession.candies === 1 ? ' candy collected' : ' candies collected'}</span>
           </div>
           <div className="end-stats">
-            <div className="end-stat">Questions attempted: {resultSession.questionsAttempted}</div>
-            <div className="end-stat">Correct answers: {resultSession.correctAnswers}</div>
-          </div>
-          <div className="candy-rain" aria-hidden="true">
-            <div className="candy-prize">
-              <span className="candy-piece"></span>
-              <span className="candy-label">
-                {resultSession.candies > 0 ? 'Candy power!' : 'Ready for candy!'}
-              </span>
-            </div>
+            <div className="end-stat">Questions: {resultSession.questionsAttempted}</div>
+            <div className="end-stat">Correct: {resultSession.correctAnswers}</div>
           </div>
           {saveMessage && <p className="status-text">{saveMessage}</p>}
           <div className="result-actions">
@@ -813,6 +821,82 @@ function CandyDots() {
       <span></span>
       <span></span>
       <span></span>
+    </div>
+  )
+}
+
+function SessionTimeline({ sessions, isProgressLoading }) {
+  if (sessions.length === 0 && !isProgressLoading) {
+    return <div className="empty-progress">Play a round to start collecting candies here.</div>
+  }
+
+  return (
+    <div className="candy-timeline">
+      {sessions.map((session, index) => (
+        <article className="session-card" key={session.id}>
+          <div className="timeline-marker" aria-hidden="true">
+            <span>{index + 1}</span>
+          </div>
+          <div className="session-content">
+            <div className="session-topline">
+              <p className="session-candies">
+                {session.candies} {session.candies === 1 ? 'candy' : 'candies'}
+              </p>
+              <div className="session-meta">
+                <span>
+                  <CalendarIcon />
+                  {formatSessionDate(session.createdAt)}
+                </span>
+                <span>
+                  <ClockIcon />
+                  {session.durationMinutes} min
+                </span>
+              </div>
+            </div>
+            <div className="session-chips">
+              <span>{session.questionsAttempted} questions</span>
+              <span>{formatOperationPill(session.operations || [])}</span>
+              <span>{formatDigitPill(session.digitLevels || [])} digits</span>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg className="meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="5" width="16" height="15" rx="3"></rect>
+      <path d="M8 3v4M16 3v4M4 10h16"></path>
+    </svg>
+  )
+}
+
+function ClockIcon() {
+  return (
+    <svg className="meta-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8"></circle>
+      <path d="M12 8v5l3 2"></path>
+    </svg>
+  )
+}
+
+function StarRating({ correctAnswers, questionsAttempted }) {
+  const filledStars = questionsAttempted
+    ? Math.floor((correctAnswers / questionsAttempted) * 5)
+    : 0
+
+  return (
+    <div className="star-rating" aria-label={`${filledStars} out of 5 stars`}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <span
+          className={`result-star ${index < filledStars ? 'filled' : ''}`}
+          style={{ '--star-delay': `${index * 90}ms` }}
+          key={index}
+        ></span>
+      ))}
     </div>
   )
 }

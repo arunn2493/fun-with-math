@@ -102,13 +102,9 @@
 .progress-actions,
 .game-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   margin-bottom: 18px;
-}
-
-.game-actions {
-  justify-content: flex-start;
 }
 
 .small-button,

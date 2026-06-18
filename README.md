@@ -29,15 +29,15 @@ v1/index.html
 
 It is a single-file HTML/CSS/JavaScript app with local progress saved on the device.
 
-### V3
+### V3.1
 
-V3 is the current React/Firebase app. It lives in:
+V3.1 is the current React/Firebase app. It lives in:
 
 ```text
 v2-app/
 ```
 
-V3 includes:
+V3.1 includes:
 
 - React + Vite app.
 - Firebase Google sign-in.
@@ -48,6 +48,9 @@ V3 includes:
 - React setup, gameplay, result, and progress screens.
 - Firestore session persistence at `users/{uid}/sessions/{sessionId}`.
 - Lifetime candies and recent sessions loaded from Firestore.
+- Polished Candy Progress timeline with latest 5 sessions.
+- Separate scrollable All Candy Rounds view for older sessions.
+- Polished post-game result screen with candy-focused scoring and animated stars.
 - Repo-tracked Firestore security rules.
 - Firebase setup documentation.
 
@@ -204,6 +207,18 @@ npx firebase-tools deploy --only firestore:rules --project fun-with-math-bd66c
 - Read recent sessions and lifetime candies from Firestore.
 - Updated Firestore rules for session data.
 - Kept the same candy-first, low-pressure experience from V1.2.
+
+### V3.1
+
+- Polished the Candy Progress screen visual hierarchy.
+- Made lifetime candies and last-session cards the primary focus.
+- Replaced recent-session cards with a compact Candy Timeline.
+- Kept the main progress screen focused on the latest 5 sessions.
+- Added a separate scrollable All Candy Rounds screen for older sessions.
+- Removed redundant progress Refresh buttons now that progress is Firestore-backed.
+- Polished the post-game result screen.
+- Added a subtle 5-star result animation based on correct-answer percentage.
+- Kept candies collected as the main reward focus.
 
 V3 does not include:
 

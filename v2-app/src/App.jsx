@@ -546,22 +546,6 @@ function App() {
     setScreen('allRounds')
   }
 
-  const refreshProgress = async () => {
-    if (!user) return
-
-    setIsProgressLoading(true)
-    setProgressMessage('')
-
-    try {
-      setSessions(await fetchUserSessions(user.uid))
-    } catch (error) {
-      setProgressMessage('Progress is taking a break. Try again soon.')
-      console.error('Could not refresh sessions:', error)
-    } finally {
-      setIsProgressLoading(false)
-    }
-  }
-
   if (isLoading) {
     return (
       <main className="app-shell">
@@ -628,9 +612,6 @@ function App() {
             <button className="small-button" type="button" onClick={goHome}>
               Home
             </button>
-            <button className="small-button" type="button" onClick={refreshProgress}>
-              Refresh
-            </button>
           </div>
           <h1 className="page-title">Candy Progress</h1>
           <div className="progress-summary">
@@ -660,9 +641,6 @@ function App() {
           <div className="progress-actions">
             <button className="small-button" type="button" onClick={showProgress}>
               Back
-            </button>
-            <button className="small-button" type="button" onClick={refreshProgress}>
-              Refresh
             </button>
           </div>
           <h1 className="page-title">All Candy Rounds</h1>

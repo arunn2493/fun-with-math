@@ -53,7 +53,9 @@ service cloud.firestore {
         'correctAnswers',
         'durationMinutes',
         'operations',
-        'digitLevels'
+        'digitLevels',
+        'operationStats',
+        'digitStats'
       ]);
     }
 
@@ -67,7 +69,9 @@ service cloud.firestore {
         'correctAnswers',
         'durationMinutes',
         'operations',
-        'digitLevels'
+        'digitLevels',
+        'operationStats',
+        'digitStats'
       ]);
     }
 
@@ -82,7 +86,9 @@ service cloud.firestore {
         && request.resource.data.correctAnswers is int
         && request.resource.data.durationMinutes is int
         && request.resource.data.operations is list
-        && request.resource.data.digitLevels is list;
+        && request.resource.data.digitLevels is list
+        && request.resource.data.operationStats is map
+        && request.resource.data.digitStats is map;
     }
 
     match /users/{userId} {

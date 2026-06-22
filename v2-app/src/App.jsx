@@ -34,8 +34,14 @@ const celebrationMessages = [
 
 const keepTryingMessages = [
   'Good try. Want to collect candies next time?',
-  'You showed up and practiced. That matters!',
   'Ready for another candy try?',
+  'Try again to collect your first candy!',
+]
+
+const noAttemptMessages = [
+  'Try a question to collect candies!',
+  'Give one question a try next time!',
+  'No candies yet. Try one question!',
 ]
 
 const lowCandyMessages = [
@@ -155,10 +161,146 @@ function formatDigitPill(selectedDigits) {
   return selectedDigits.slice().sort().join('-')
 }
 
-function getEndMessage(candies) {
-  if (candies === 0) return randomItem(keepTryingMessages)
-  if (candies < 10) return randomItem(lowCandyMessages)
+function getEndMessage(session) {
+  if (session.questionsAttempted === 0) return randomItem(noAttemptMessages)
+  if (session.correctAnswers === 0) return randomItem(keepTryingMessages)
+  if (session.candies < 10) return randomItem(lowCandyMessages)
   return randomItem(celebrationMessages)
+}
+
+function shouldShowConfetti(session) {
+  if (!session?.questionsAttempted) return false
+  return session.correctAnswers / session.questionsAttempted > 0.9
+}
+
+function createEmptyOperationStats() {
+  return operationKeys.reduce((stats, operation) => {
+    stats[operation] = { attempted: 0, correct: 0 }
+    return stats
+  }, {})
+}
+
+function createEmptyDigitStats() {
+  return digitOptions.reduce((stats, digits) => {
+    stats[String(digits)] = { attempted: 0, correct: 0 }
+    return stats
+  }, {})
+}
+
+function buildPracticeStats(history = []) {
+  const operationStats = createEmptyOperationStats()
+  const digitStats = createEmptyDigitStats()
+
+  history.forEach((answerRecord) => {
+    const operationStat = operationStats[answerRecord.operation]
+    const digitStat = digitStats[String(answerRecord.digits)]
+
+    if (operationStat) {
+      operationStat.attempted += 1
+      if (answerRecord.correct) operationStat.correct += 1
+    }
+
+    if (digitStat) {
+      digitStat.attempted += 1
+      if (answerRecord.correct) digitStat.correct += 1
+    }
+  })
+
+  return { operationStats, digitStats }
+}
+
+function addStats(targetStats, sourceStats) {
+  Object.entries(targetStats).forEach(([key, target]) => {
+    const source = sourceStats?.[key]
+    if (!source) return
+
+    target.attempted += Number(source.attempted || 0)
+    target.correct += Number(source.correct || 0)
+  })
+}
+
+function hasTrackedStats(stats) {
+  return Object.values(stats || {}).some((stat) => Number(stat?.attempted || 0) > 0)
+}
+
+function getPercent(stat) {
+  const attempted = Number(stat?.attempted || 0)
+  if (attempted === 0) return null
+  return Math.round((Number(stat.correct || 0) / attempted) * 100)
+}
+
+function buildRecentPracticeSummary(sessions) {
+  const operationStats = createEmptyOperationStats()
+  const digitStats = createEmptyDigitStats()
+
+  sessions.slice(0, 5).forEach((session) => {
+    addStats(operationStats, session.operationStats)
+    addStats(digitStats, session.digitStats)
+  })
+
+  return { operationStats, digitStats }
+}
+
+function getLowestStatItems(stats, labels) {
+  const practicedItems = Object.entries(stats)
+    .map(([key, stat]) => ({
+      key,
+      label: labels[key],
+      percent: getPercent(stat),
+    }))
+    .filter((item) => item.percent !== null)
+
+  if (practicedItems.length === 0) return []
+
+  const lowestPercent = Math.min(...practicedItems.map((item) => item.percent))
+  return practicedItems.filter((item) => item.percent === lowestPercent)
+}
+
+function formatList(items) {
+  if (items.length === 0) return ''
+  if (items.length === 1) return items[0]
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`
+}
+
+function buildSetupRecommendation(practiceSummary) {
+  const operationLabels = Object.fromEntries(
+    operationKeys.map((operation) => [operation, operations[operation].label.toLowerCase()]),
+  )
+  const digitLabels = Object.fromEntries(
+    digitOptions.map((digits) => [String(digits), `${digits}-digit`]),
+  )
+  const recommendedOperations = getLowestStatItems(practiceSummary.operationStats, operationLabels)
+  const recommendedDigits = getLowestStatItems(practiceSummary.digitStats, digitLabels)
+
+  if (!recommendedOperations.length && !recommendedDigits.length) {
+    return {
+      hasData: false,
+      text: 'Play a round and I will find a sweet practice idea.',
+      operationItems: [],
+      digitItems: [],
+    }
+  }
+
+  const operationText = formatList(recommendedOperations.map((operation) => operation.label))
+  const digitText = formatList(recommendedDigits.map((digit) => digit.label))
+  const targetText =
+    operationText && digitText
+      ? `${operationText} of ${digitText} number sizes`
+      : operationText || `${digitText} number sizes`
+
+  return {
+    hasData: true,
+    text: `Maybe you could practice ${targetText}.`,
+    operationItems: operationKeys.map((operation) => ({
+      key: operation,
+      label: operations[operation].symbol,
+    })),
+    digitItems: digitOptions.map((digits) => ({
+      key: String(digits),
+      label: String(digits),
+    })),
+  }
 }
 
 async function saveUserProfile(firebaseUser) {
@@ -186,6 +328,7 @@ async function saveUserProfile(firebaseUser) {
 
 function buildSessionRecord(userId, session) {
   const sessionRef = doc(collection(db, 'users', userId, 'sessions'))
+  const practiceStats = buildPracticeStats(session.history)
 
   return {
     ref: sessionRef,
@@ -199,6 +342,8 @@ function buildSessionRecord(userId, session) {
       durationMinutes: session.durationMinutes,
       operations: session.operations,
       digitLevels: session.digitLevels,
+      operationStats: practiceStats.operationStats,
+      digitStats: practiceStats.digitStats,
     },
     optimisticData: {
       id: sessionRef.id,
@@ -210,6 +355,8 @@ function buildSessionRecord(userId, session) {
       durationMinutes: session.durationMinutes,
       operations: session.operations,
       digitLevels: session.digitLevels,
+      operationStats: practiceStats.operationStats,
+      digitStats: practiceStats.digitStats,
     },
   }
 }
@@ -333,6 +480,11 @@ function App() {
     () => sessions.reduce((total, session) => total + Number(session.candies || 0), 0),
     [sessions],
   )
+  const recentPracticeSummary = useMemo(() => buildRecentPracticeSummary(sessions), [sessions])
+  const setupRecommendation = useMemo(
+    () => buildSetupRecommendation(recentPracticeSummary),
+    [recentPracticeSummary],
+  )
 
   const lastSession = sessions[0]
 
@@ -343,7 +495,6 @@ function App() {
     try {
       const result = await signInWithPopup(auth, googleProvider)
       await saveUserProfile(result.user)
-      setAuthMessage('Your candy adventure is ready to save.')
     } catch (error) {
       setAuthMessage('Sign in did not work this time. Please try again.')
       console.error('Google sign in failed:', error)
@@ -549,6 +700,7 @@ function App() {
   if (isLoading) {
     return (
       <main className="app-shell">
+        <MathSprinkles />
         <section className="card home-card" aria-live="polite">
           <CandyDots />
           <h1 className="title">Fun with Math</h1>
@@ -561,6 +713,7 @@ function App() {
   if (!user) {
     return (
       <main className="app-shell">
+        <MathSprinkles />
         <section className="card home-card" aria-live="polite">
           <CandyDots />
           <h1 className="title">Fun with Math</h1>
@@ -581,13 +734,14 @@ function App() {
 
   return (
     <main className="app-shell">
+      <MathSprinkles />
       {screen === 'home' && (
         <section className="card home-card" aria-live="polite">
           <div className="top-actions">
-            <button className="small-button" type="button" onClick={showProgress}>
+            <button className="small-button progress-button" type="button" onClick={showProgress}>
               View Progress
             </button>
-            <button className="small-button" type="button" onClick={handleSignOut}>
+            <button className="small-button signout-button" type="button" onClick={handleSignOut}>
               Sign out
             </button>
           </div>
@@ -608,9 +762,12 @@ function App() {
 
       {screen === 'progress' && (
         <section className="card progress-card" aria-live="polite">
-          <div className="progress-actions">
+          <div className="progress-actions progress-actions-split">
             <button className="small-button" type="button" onClick={goHome}>
               Home
+            </button>
+            <button className="small-button signout-button" type="button" onClick={handleSignOut}>
+              Sign out
             </button>
           </div>
           <h1 className="page-title">Candy Progress</h1>
@@ -659,7 +816,11 @@ function App() {
               Home
             </button>
           </div>
-          <h1 className="page-title">Pick Your Round</h1>
+          <h1 className="page-title setup-title">Pick Your Round</h1>
+          <SetupRecommendation
+            recommendation={setupRecommendation}
+            practiceSummary={recentPracticeSummary}
+          />
 
           <p className="section-label">How long?</p>
           <div className="choices" aria-label="Duration">
@@ -675,7 +836,7 @@ function App() {
             ))}
           </div>
 
-          <p className="section-label">Which math?</p>
+          <p className="section-label">Which Operation?</p>
           <div className="choices" aria-label="Operations">
             {operationKeys.map((operation) => (
               <button
@@ -688,7 +849,7 @@ function App() {
               </button>
             ))}
           </div>
-          <p className="helper">No math operation picked? We will mix them all together.</p>
+          <p className="helper setup-helper">No operation picked? We will mix them all together.</p>
 
           <p className="section-label">Number size?</p>
           <div className="choices" aria-label="Digit difficulty">
@@ -703,7 +864,7 @@ function App() {
               </button>
             ))}
           </div>
-          <p className="helper">No number size picked? We will mix all the digits for extra fun.</p>
+          <p className="helper setup-helper">No number size picked? We will mix all digits for extra fun.</p>
 
           <button className="primary" type="button" onClick={startGame}>
             Start
@@ -731,13 +892,23 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className="stat">
-              <span className="stat-label">Candies</span>
-              <span className="stat-value">{currentSession.candies}</span>
+            <div className="stat candy-stat">
+              <div className="stat-content">
+                <CandyIcon />
+                <div>
+                  <span className="stat-label">Candies</span>
+                  <span className="stat-value">{currentSession.candies}</span>
+                </div>
+              </div>
             </div>
-            <div className="stat">
-              <span className="stat-label">Questions</span>
-              <span className="stat-value">{currentSession.questionsAttempted}</span>
+            <div className="stat question-stat">
+              <div className="stat-content">
+                <QuestionIcon />
+                <div>
+                  <span className="stat-label">Questions</span>
+                  <span className="stat-value">{currentSession.questionsAttempted}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -765,18 +936,20 @@ function App() {
 
       {screen === 'result' && resultSession && (
         <section className="card result-card" aria-live="polite">
-          <h1 className="end-title">{getEndMessage(resultSession.candies)}</h1>
-          <StarRating
-            correctAnswers={resultSession.correctAnswers}
-            questionsAttempted={resultSession.questionsAttempted}
-          />
+          {shouldShowConfetti(resultSession) && <ConfettiRain />}
+          <div className="progress-actions">
+            <button className="small-button" type="button" onClick={goHome}>
+              Home
+            </button>
+          </div>
+          <h1 className="end-title">{getEndMessage(resultSession)}</h1>
           <div className="candies-big">
             <strong>{resultSession.candies}</strong>
             <span>{resultSession.candies === 1 ? ' candy collected' : ' candies collected'}</span>
           </div>
           <div className="end-stats">
-            <div className="end-stat">Questions: {resultSession.questionsAttempted}</div>
-            <div className="end-stat">Correct: {resultSession.correctAnswers}</div>
+            <div className="end-stat end-stat-questions">Questions: {resultSession.questionsAttempted}</div>
+            <div className="end-stat end-stat-correct">Correct: {resultSession.correctAnswers}</div>
           </div>
           {saveMessage && <p className="status-text">{saveMessage}</p>}
           <div className="result-actions">
@@ -790,6 +963,58 @@ function App() {
         </section>
       )}
     </main>
+  )
+}
+
+function MathSprinkles() {
+  return (
+    <div className="math-sprinkles" aria-hidden="true">
+      <span>+</span>
+      <span>−</span>
+      <span>×</span>
+      <span>÷</span>
+      <span>=</span>
+      <span>?</span>
+    </div>
+  )
+}
+
+function ConfettiRain() {
+  return (
+    <div className="confetti-rain" aria-hidden="true">
+      {Array.from({ length: 28 }, (_, index) => (
+        <span key={index}></span>
+      ))}
+    </div>
+  )
+}
+
+function SetupRecommendation({ recommendation, practiceSummary }) {
+  if (!recommendation.hasData) {
+    return <p className="setup-recommendation-empty">{recommendation.text}</p>
+  }
+
+  return (
+    <details className="setup-recommendation">
+      <summary>
+        <span>Need a practice idea?</span>
+        <span className="setup-recommendation-toggle" aria-hidden="true">+</span>
+      </summary>
+      <p>{recommendation.text}</p>
+      <h2>In the last 5 sessions:</h2>
+      <StatChipGroup
+        label="Operations"
+        stats={practiceSummary.operationStats}
+        items={recommendation.operationItems}
+        display="percent"
+      />
+      <StatChipGroup
+        label="Number size"
+        stats={practiceSummary.digitStats}
+        items={recommendation.digitItems}
+        display="percent"
+      />
+    </details>
   )
 }
 
@@ -811,34 +1036,89 @@ function SessionTimeline({ sessions, isProgressLoading }) {
   return (
     <div className="candy-timeline">
       {sessions.map((session, index) => (
-        <article className="session-card" key={session.id}>
-          <div className="timeline-marker" aria-hidden="true">
-            <span>{index + 1}</span>
-          </div>
-          <div className="session-content">
-            <div className="session-topline">
-              <p className="session-candies">
-                {session.candies} {session.candies === 1 ? 'candy' : 'candies'}
-              </p>
-              <div className="session-meta">
-                <span>
-                  <CalendarIcon />
-                  {formatSessionDate(session.createdAt)}
-                </span>
-                <span>
-                  <ClockIcon />
-                  {session.durationMinutes} min
-                </span>
+        <details className="session-card" key={session.id}>
+          <summary className="session-summary">
+            <div className="timeline-marker" aria-hidden="true">
+              <span>{index + 1}</span>
+            </div>
+            <div className="session-content">
+              <div className="session-topline">
+                <p className="session-candies">
+                  {session.candies} {session.candies === 1 ? 'candy' : 'candies'}
+                </p>
+                <div className="session-meta">
+                  <span>
+                    <CalendarIcon />
+                    {formatSessionDate(session.createdAt)}
+                  </span>
+                  <span>
+                    <ClockIcon />
+                    {session.durationMinutes} min
+                  </span>
+                </div>
+              </div>
+              <div className="session-chips">
+                <span>{session.questionsAttempted} questions</span>
+                <span>{formatOperationPill(session.operations || [])}</span>
+                <span>{formatDigitPill(session.digitLevels || [])} digits</span>
+                <span className="round-toggle" aria-hidden="true">⌄</span>
               </div>
             </div>
-            <div className="session-chips">
-              <span>{session.questionsAttempted} questions</span>
-              <span>{formatOperationPill(session.operations || [])}</span>
-              <span>{formatDigitPill(session.digitLevels || [])} digits</span>
-            </div>
+          </summary>
+          <div className="round-details">
+            {hasTrackedStats(session.operationStats) || hasTrackedStats(session.digitStats) ? (
+              <>
+                <StatChipGroup
+                  label="Operations"
+                  stats={session.operationStats}
+                  items={operationKeys.map((operation) => ({
+                    key: operation,
+                    label: operations[operation].symbol,
+                  }))}
+                />
+                <StatChipGroup
+                  label="Number size"
+                  stats={session.digitStats}
+                  items={digitOptions.map((digits) => ({
+                    key: String(digits),
+                    label: String(digits),
+                  }))}
+                />
+              </>
+            ) : (
+              <p className="round-details-empty">Detailed stats start with your next saved round.</p>
+            )}
           </div>
-        </article>
+        </details>
       ))}
+    </div>
+  )
+}
+
+function StatChipGroup({ label, stats, items, display = 'count' }) {
+  return (
+    <div className="stat-chip-group">
+      <span className="stat-chip-label">{label}</span>
+      <div className="stat-chip-row">
+        {items.map((item) => (
+          <StatChip key={item.key} label={item.label} stat={stats?.[item.key]} display={display} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StatChip({ label, stat, display = 'count' }) {
+  const attempted = Number(stat?.attempted || 0)
+  const correct = Number(stat?.correct || 0)
+  const percent = getPercent(stat)
+  const tone = percent === null ? 'empty' : percent < 70 ? 'weak' : percent < 85 ? 'watch' : 'strong'
+  const value = display === 'percent' ? `${percent}%` : `${correct}/${attempted}`
+
+  return (
+    <div className={`stat-chip ${tone}`}>
+      <span>{label}</span>
+      <strong>{attempted === 0 ? '-' : value}</strong>
     </div>
   )
 }
@@ -861,21 +1141,25 @@ function ClockIcon() {
   )
 }
 
-function StarRating({ correctAnswers, questionsAttempted }) {
-  const filledStars = questionsAttempted
-    ? Math.floor((correctAnswers / questionsAttempted) * 5)
-    : 0
-
+function CandyIcon() {
   return (
-    <div className="star-rating" aria-label={`${filledStars} out of 5 stars`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <span
-          className={`result-star ${index < filledStars ? 'filled' : ''}`}
-          style={{ '--star-delay': `${index * 90}ms` }}
-          key={index}
-        ></span>
-      ))}
-    </div>
+    <svg className="counter-icon candy-icon" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M8 17 2 12v24l6-5 6 4V13l-6 4Z"></path>
+      <path d="M40 17 46 12v24l-6-5-6 4V13l6 4Z"></path>
+      <circle cx="24" cy="24" r="13"></circle>
+      <path d="M15 24c4-2 7-5 9-13M24 37c1-7 4-11 13-13M12 18c8 1 13 6 18 18"></path>
+    </svg>
+  )
+}
+
+function QuestionIcon() {
+  return (
+    <svg className="counter-icon question-icon" viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="8" y="7" width="32" height="34" rx="8"></rect>
+      <path d="M17 18h14M17 26h9M17 34h14"></path>
+      <circle cx="33" cy="13" r="6"></circle>
+      <path d="M33 10v3l2 1"></path>
+    </svg>
   )
 }
 

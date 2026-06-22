@@ -161,6 +161,27 @@ function formatDigitPill(selectedDigits) {
   return selectedDigits.slice().sort().join('-')
 }
 
+function getUsableFirstName(displayName = '') {
+  const trimmedName = displayName.trim()
+  if (!trimmedName) return ''
+
+  const lowerName = trimmedName.toLowerCase()
+  if (
+    /[\d@&]/.test(trimmedName) ||
+    lowerName.includes('account') ||
+    lowerName.includes('gmail') ||
+    lowerName.includes('email')
+  ) {
+    return ''
+  }
+
+  const [firstName] = trimmedName.split(/\s+/)
+  if (!firstName || firstName.length < 2 || firstName.length > 20) return ''
+  if (!/^[\p{L}\p{M}'-]+$/u.test(firstName)) return ''
+
+  return firstName
+}
+
 function getEndMessage(session) {
   if (session.questionsAttempted === 0) return randomItem(noAttemptMessages)
   if (session.correctAnswers === 0) return randomItem(keepTryingMessages)
@@ -277,6 +298,9 @@ function buildSetupRecommendation(practiceSummary) {
     return {
       hasData: false,
       text: 'Play a round and I will find a sweet practice idea.',
+      intro: '',
+      highlight: '',
+      outro: '',
       operationItems: [],
       digitItems: [],
     }
@@ -292,6 +316,9 @@ function buildSetupRecommendation(practiceSummary) {
   return {
     hasData: true,
     text: `Maybe you could practice ${targetText}.`,
+    intro: 'Maybe you could practice ',
+    highlight: targetText,
+    outro: '.',
     operationItems: operationKeys.map((operation) => ({
       key: operation,
       label: operations[operation].symbol,
@@ -487,6 +514,8 @@ function App() {
   )
 
   const lastSession = sessions[0]
+  const firstName = getUsableFirstName(user?.displayName || '')
+  const greetingName = firstName || 'math friend'
 
   const handleSignIn = async () => {
     setAuthMessage('')
@@ -715,9 +744,8 @@ function App() {
       <main className="app-shell">
         <MathSprinkles />
         <section className="card home-card" aria-live="polite">
+          <BrandMark className="sign-in-brand-mark" />
           <CandyDots />
-          <h1 className="title">Fun with Math</h1>
-          <p className="subtitle">Sign in to save your candy adventures.</p>
           <button
             className="primary"
             type="button"
@@ -726,6 +754,7 @@ function App() {
           >
             {isSavingProfile ? 'Getting ready...' : 'Sign in with Google'}
           </button>
+          <p className="subtitle sign-in-helper">Sign in to save your candy adventures.</p>
           {authMessage && <p className="status-text">{authMessage}</p>}
         </section>
       </main>
@@ -737,6 +766,7 @@ function App() {
       <MathSprinkles />
       {screen === 'home' && (
         <section className="card home-card" aria-live="polite">
+          <BrandMark className="home-corner-title" />
           <div className="top-actions">
             <button className="small-button progress-button" type="button" onClick={showProgress}>
               View Progress
@@ -746,8 +776,8 @@ function App() {
             </button>
           </div>
           <CandyDots />
-          <h1 className="title">Fun with Math</h1>
-          <p className="subtitle">Hi, {user.displayName || 'math friend'}!</p>
+          <UserAvatar user={user} />
+          <p className="subtitle">Hi, {greetingName}!</p>
           <p className="home-message">
             {lastSession
               ? `Last time you earned ${lastSession.candies} candies. Can you earn more today?`
@@ -756,6 +786,10 @@ function App() {
           <button className="primary" type="button" onClick={showSetup}>
             Play Now
           </button>
+          <div className="home-trust-stamps" aria-label="Trust badges">
+            <span>Secure Space</span>
+            <span>Kid-Approved</span>
+          </div>
           {authMessage && <p className="status-text">{authMessage}</p>}
         </section>
       )}
@@ -766,6 +800,7 @@ function App() {
             <button className="small-button" type="button" onClick={goHome}>
               Home
             </button>
+            <BrandMark className="progress-brand-mark" />
             <button className="small-button signout-button" type="button" onClick={handleSignOut}>
               Sign out
             </button>
@@ -989,6 +1024,33 @@ function ConfettiRain() {
   )
 }
 
+function UserAvatar({ user }) {
+  const photoURL = user?.photoURL || ''
+  const shouldUseGooglePhoto =
+    photoURL &&
+    !photoURL.includes('googleusercontent.com/a/') &&
+    !photoURL.includes('googleusercontent.com/oa/')
+
+  return (
+    <div className="home-avatar" aria-label="Player profile">
+      {shouldUseGooglePhoto ? (
+        <img src={photoURL} alt="" referrerPolicy="no-referrer" />
+      ) : (
+        <img src="/owl-avatar-512.png" alt="" />
+      )}
+    </div>
+  )
+}
+
+function BrandMark({ className }) {
+  return (
+    <div className={className}>
+      <img src="/logo.png" alt="" />
+      <span>Fun with Math</span>
+    </div>
+  )
+}
+
 function SetupRecommendation({ recommendation, practiceSummary }) {
   if (!recommendation.hasData) {
     return <p className="setup-recommendation-empty">{recommendation.text}</p>
@@ -1000,7 +1062,11 @@ function SetupRecommendation({ recommendation, practiceSummary }) {
         <span>Need a practice idea?</span>
         <span className="setup-recommendation-toggle" aria-hidden="true">+</span>
       </summary>
-      <p>{recommendation.text}</p>
+      <p>
+        {recommendation.intro}
+        <strong>{recommendation.highlight}</strong>
+        {recommendation.outro}
+      </p>
       <h2>In the last 5 sessions:</h2>
       <StatChipGroup
         label="Operations"

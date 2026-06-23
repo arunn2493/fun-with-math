@@ -417,6 +417,7 @@ function App() {
   const [feedback, setFeedback] = useState({ text: '', tone: '' })
   const [resultSession, setResultSession] = useState(null)
   const [saveMessage, setSaveMessage] = useState('')
+  const [usesOnScreenKeypad, setUsesOnScreenKeypad] = useState(false)
 
   const answerInputRef = useRef(null)
   const finishTimerRef = useRef(null)
@@ -434,6 +435,27 @@ function App() {
     })
 
     return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia?.('(pointer: coarse)')
+    if (!mediaQuery) return undefined
+
+    const updateKeypadMode = () => setUsesOnScreenKeypad(mediaQuery.matches)
+    updateKeypadMode()
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', updateKeypadMode)
+    } else {
+      mediaQuery.addListener(updateKeypadMode)
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', updateKeypadMode)
+      } else {
+        mediaQuery.removeListener(updateKeypadMode)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -498,10 +520,10 @@ function App() {
   }, [isInEndGrace])
 
   useEffect(() => {
-    if (screen === 'game') {
+    if (screen === 'game' && !usesOnScreenKeypad) {
       answerInputRef.current?.focus()
     }
-  }, [screen, currentSession?.currentQuestion?.prompt])
+  }, [screen, currentSession?.currentQuestion?.prompt, usesOnScreenKeypad])
 
   const lifetimeCandies = useMemo(
     () => sessions.reduce((total, session) => total + Number(session.candies || 0), 0),
@@ -611,16 +633,15 @@ function App() {
     setAnswer('')
   }
 
-  const handleSubmitAnswer = (event) => {
-    event.preventDefault()
+  const submitAnswer = (answerOverride = answer) => {
     if (!currentSession?.currentQuestion || currentSession.ended) return
 
-    if (answer.trim() === '') {
+    if (answerOverride.trim() === '') {
       setFeedback({ text: 'Pop in a number when you are ready.', tone: 'try' })
       return
     }
 
-    const guess = Number(answer)
+    const guess = Number(answerOverride)
     const question = currentSession.currentQuestion
     const isCorrect = guess === question.answer
     const nextSession = {
@@ -663,6 +684,35 @@ function App() {
     }
 
     window.setTimeout(showNextQuestion, 0)
+  }
+
+  const handleSubmitAnswer = (event) => {
+    event.preventDefault()
+    submitAnswer()
+  }
+
+  const handleKeypadPress = (key) => {
+    if (!currentSession || currentSession.ended) return
+
+    if (key === 'minus') {
+      const nextAnswer = answer.startsWith('-') ? answer.slice(1) : `-${answer}`
+      setAnswer(nextAnswer)
+      if (Number(nextAnswer) === currentSession.currentQuestion.answer) {
+        window.setTimeout(() => submitAnswer(nextAnswer), 0)
+      }
+      return
+    }
+
+    if (key === 'backspace') {
+      setAnswer(answer.slice(0, -1))
+      return
+    }
+
+    const nextAnswer = `${answer}${key}`
+    setAnswer(nextAnswer)
+    if (Number(nextAnswer) === currentSession.currentQuestion.answer) {
+      window.setTimeout(() => submitAnswer(nextAnswer), 0)
+    }
   }
 
   const clearGameTimers = () => {
@@ -762,7 +812,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell app-${screen}`}>
       <MathSprinkles />
       {screen === 'home' && (
         <section className="card home-card" aria-live="polite">
@@ -954,16 +1004,28 @@ function App() {
                 ref={answerInputRef}
                 className="answer"
                 type="number"
-                inputMode="numeric"
+                inputMode={usesOnScreenKeypad ? 'none' : 'numeric'}
                 autoComplete="off"
                 aria-label="Answer"
+                readOnly={usesOnScreenKeypad}
                 value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
+                onChange={(event) => {
+                  const nextAnswer = event.target.value
+                  setAnswer(nextAnswer)
+                  if (
+                    nextAnswer.trim() !== '' &&
+                    currentSession?.currentQuestion &&
+                    Number(nextAnswer) === currentSession.currentQuestion.answer
+                  ) {
+                    window.setTimeout(() => submitAnswer(nextAnswer), 0)
+                  }
+                }}
               />
               <button className="submit" type="submit">
                 Go
               </button>
             </form>
+            {usesOnScreenKeypad && <NumberPad onPress={handleKeypadPress} />}
             <p className={`feedback ${feedback.tone}`}>{feedback.text}</p>
           </div>
         </section>
@@ -1038,6 +1100,26 @@ function UserAvatar({ user }) {
       ) : (
         <img src="/owl-avatar-512.png" alt="" />
       )}
+    </div>
+  )
+}
+
+function NumberPad({ onPress }) {
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'minus', '0', 'backspace']
+
+  return (
+    <div className="number-pad" aria-label="On-screen number pad">
+      {keys.map((key) => (
+        <button
+          className={`number-pad-key ${key.length > 1 ? 'number-pad-action' : ''}`}
+          type="button"
+          key={key}
+          onClick={() => onPress(key)}
+          aria-label={key === 'minus' ? 'Minus sign' : key === 'backspace' ? 'Delete digit' : key}
+        >
+          {key === 'minus' ? '-' : key === 'backspace' ? '⌫' : key}
+        </button>
+      ))}
     </div>
   )
 }

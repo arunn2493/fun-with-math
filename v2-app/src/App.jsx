@@ -24,6 +24,7 @@ const operations = {
 const operationKeys = Object.keys(operations)
 const digitOptions = [1, 2, 3]
 const durationOptions = [1, 2, 3, 4, 5]
+const nextQuestionDelayMs = 900
 
 const celebrationMessages = [
   'Candy superstar!',
@@ -414,6 +415,8 @@ function App() {
   const [isProgressLoading, setIsProgressLoading] = useState(false)
   const [currentSession, setCurrentSession] = useState(null)
   const [answer, setAnswer] = useState('')
+  const [isAnswerLocked, setIsAnswerLocked] = useState(false)
+  const [answerEffect, setAnswerEffect] = useState({ tone: '', id: 0 })
   const [feedback, setFeedback] = useState({ text: '', tone: '' })
   const [resultSession, setResultSession] = useState(null)
   const [saveMessage, setSaveMessage] = useState('')
@@ -597,6 +600,8 @@ function App() {
     setSaveMessage('')
     setResultSession(null)
     setAnswer('')
+    setIsAnswerLocked(false)
+    setAnswerEffect({ tone: '', id: 0 })
     setFeedback({ text: '', tone: '' })
     setCurrentSession({
       durationMinutes,
@@ -631,15 +636,19 @@ function App() {
       }
     })
     setAnswer('')
+    setIsAnswerLocked(false)
+    setAnswerEffect({ tone: '', id: 0 })
   }
 
   const submitAnswer = (answerOverride = answer) => {
-    if (!currentSession?.currentQuestion || currentSession.ended) return
+    if (!currentSession?.currentQuestion || currentSession.ended || isAnswerLocked) return
 
     if (answerOverride.trim() === '') {
       setFeedback({ text: 'Pop in a number when you are ready.', tone: 'try' })
       return
     }
+
+    setIsAnswerLocked(true)
 
     const guess = Number(answerOverride)
     const question = currentSession.currentQuestion
@@ -661,6 +670,10 @@ function App() {
     }
 
     setCurrentSession(nextSession)
+    setAnswerEffect((effect) => ({
+      tone: isCorrect ? 'good' : 'try',
+      id: effect.id + 1,
+    }))
 
     setFeedback(
       isCorrect
@@ -683,7 +696,7 @@ function App() {
       return
     }
 
-    window.setTimeout(showNextQuestion, 0)
+    window.setTimeout(showNextQuestion, nextQuestionDelayMs)
   }
 
   const handleSubmitAnswer = (event) => {
@@ -692,14 +705,11 @@ function App() {
   }
 
   const handleKeypadPress = (key) => {
-    if (!currentSession || currentSession.ended) return
+    if (!currentSession || currentSession.ended || isAnswerLocked) return
 
     if (key === 'minus') {
       const nextAnswer = answer.startsWith('-') ? answer.slice(1) : `-${answer}`
       setAnswer(nextAnswer)
-      if (Number(nextAnswer) === currentSession.currentQuestion.answer) {
-        window.setTimeout(() => submitAnswer(nextAnswer), 0)
-      }
       return
     }
 
@@ -710,9 +720,6 @@ function App() {
 
     const nextAnswer = `${answer}${key}`
     setAnswer(nextAnswer)
-    if (Number(nextAnswer) === currentSession.currentQuestion.answer) {
-      window.setTimeout(() => submitAnswer(nextAnswer), 0)
-    }
   }
 
   const clearGameTimers = () => {
@@ -977,7 +984,7 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className="stat candy-stat">
+            <div className={`stat candy-stat ${answerEffect.tone === 'good' ? 'candy-earned' : ''}`}>
               <div className="stat-content">
                 <CandyIcon />
                 <div>
@@ -1002,31 +1009,25 @@ function App() {
             <form className="answer-row" onSubmit={handleSubmitAnswer}>
               <input
                 ref={answerInputRef}
-                className="answer"
+                className={`answer ${answerEffect.tone === 'try' ? 'answer-shake' : ''}`}
                 type="number"
                 inputMode={usesOnScreenKeypad ? 'none' : 'numeric'}
                 autoComplete="off"
                 aria-label="Answer"
                 readOnly={usesOnScreenKeypad}
+                disabled={isAnswerLocked}
                 value={answer}
                 onChange={(event) => {
-                  const nextAnswer = event.target.value
-                  setAnswer(nextAnswer)
-                  if (
-                    nextAnswer.trim() !== '' &&
-                    currentSession?.currentQuestion &&
-                    Number(nextAnswer) === currentSession.currentQuestion.answer
-                  ) {
-                    window.setTimeout(() => submitAnswer(nextAnswer), 0)
-                  }
+                  setAnswer(event.target.value)
                 }}
               />
-              <button className="submit" type="submit">
-                Go
+              <button className="submit" type="submit" disabled={isAnswerLocked}>
+                Submit
               </button>
             </form>
-            {usesOnScreenKeypad && <NumberPad onPress={handleKeypadPress} />}
+            {answerEffect.tone === 'good' && <CandyBurst key={answerEffect.id} />}
             <p className={`feedback ${feedback.tone}`}>{feedback.text}</p>
+            {usesOnScreenKeypad && <NumberPad onPress={handleKeypadPress} />}
           </div>
         </section>
       )}
@@ -1120,6 +1121,18 @@ function NumberPad({ onPress }) {
           {key === 'minus' ? '-' : key === 'backspace' ? '⌫' : key}
         </button>
       ))}
+    </div>
+  )
+}
+
+function CandyBurst() {
+  return (
+    <div className="candy-burst" aria-hidden="true">
+      <CandyIcon />
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
     </div>
   )
 }

@@ -25,6 +25,8 @@ const operationKeys = Object.keys(operations)
 const digitOptions = [1, 2, 3]
 const durationOptions = [1, 2, 3, 4, 5]
 const nextQuestionDelayMs = 900
+const progressLoadingMessage = 'Gathering your candy progress...'
+const progressErrorMessage = 'We could not load progress right now. You can still play a round.'
 
 const celebrationMessages = [
   'Candy superstar!',
@@ -481,7 +483,7 @@ function App() {
         if (isCurrent) setSessions(nextSessions)
       })
       .catch((error) => {
-        if (isCurrent) setProgressMessage('Progress is taking a break. Try again soon.')
+        if (isCurrent) setProgressMessage(progressErrorMessage)
         console.error('Could not load sessions:', error)
       })
       .finally(() => {
@@ -550,7 +552,7 @@ function App() {
       const result = await signInWithPopup(auth, googleProvider)
       await saveUserProfile(result.user)
     } catch (error) {
-      setAuthMessage('Sign in did not work this time. Please try again.')
+      setAuthMessage('Google sign-in did not open this time. Please try again.')
       console.error('Google sign in failed:', error)
     } finally {
       setIsSavingProfile(false)
@@ -568,7 +570,7 @@ function App() {
       setSessions([])
       setScreen('home')
     } catch (error) {
-      setAuthMessage('Sign out did not work this time. Please try again.')
+      setAuthMessage('Sign out did not finish this time. Please try again.')
       console.error('Sign out failed:', error)
     }
   }
@@ -749,7 +751,7 @@ function App() {
       await setDoc(sessionRecord.ref, sessionRecord.data)
       setSaveMessage('Candies saved.')
     } catch (error) {
-      setSaveMessage('Candies could not be saved this time.')
+      setSaveMessage('Candies could not be saved this time, but you still practiced!')
       console.error('Could not save session:', error)
     }
   }
@@ -790,7 +792,11 @@ function App() {
         <section className="card home-card" aria-live="polite">
           <CandyDots />
           <h1 className="title">Fun with Math</h1>
-          <p className="subtitle">Checking your sign in...</p>
+          <FriendlyState
+            tone="loading"
+            title="Warming up your candy trail..."
+            message="Checking your sign-in."
+          />
         </section>
       </main>
     )
@@ -812,7 +818,7 @@ function App() {
             {isSavingProfile ? 'Getting ready...' : 'Sign in with Google'}
           </button>
           <p className="subtitle sign-in-helper">Sign in to save your candy adventures.</p>
-          {authMessage && <p className="status-text">{authMessage}</p>}
+          {authMessage && <FriendlyState tone="error" title="Let us try that again." message={authMessage} />}
         </section>
       </main>
     )
@@ -836,7 +842,9 @@ function App() {
           <UserAvatar user={user} />
           <p className="subtitle">Hi, {greetingName}!</p>
           <p className="home-message">
-            {lastSession
+            {isProgressLoading && !lastSession
+              ? progressLoadingMessage
+              : lastSession
               ? `Last time you earned ${lastSession.candies} candies. Can you earn more today?`
               : 'Collect candies while practicing math!'}
           </p>
@@ -847,7 +855,7 @@ function App() {
             <span>Secure Space</span>
             <span>Kid-Approved</span>
           </div>
-          {authMessage && <p className="status-text">{authMessage}</p>}
+          {authMessage && <FriendlyState tone="error" title="One more try." message={authMessage} />}
         </section>
       )}
 
@@ -873,10 +881,21 @@ function App() {
               <strong>{lastSession ? lastSession.candies : 0}</strong>
             </div>
           </div>
-          {isProgressLoading && <p className="status-text">Gathering candies...</p>}
-          {progressMessage && <p className="status-text">{progressMessage}</p>}
+          {isProgressLoading && (
+            <FriendlyState tone="loading" title={progressLoadingMessage} message="Your candy trail will be ready soon." />
+          )}
+          {progressMessage && (
+            <FriendlyState tone="error" title="Progress is taking a break." message={progressMessage} />
+          )}
           <h2 className="timeline-heading">Recent Candy Rounds</h2>
-          <SessionTimeline sessions={sessions.slice(0, 5)} isProgressLoading={isProgressLoading} />
+          {(sessions.length > 0 || !progressMessage) && (
+            <SessionTimeline
+              sessions={sessions.slice(0, 5)}
+              isProgressLoading={isProgressLoading}
+              emptyTitle="Your candy trail starts here."
+              emptyMessage="Play one round to start collecting candies."
+            />
+          )}
           {sessions.length > 5 && (
             <button className="secondary timeline-more" type="button" onClick={showAllRounds}>
               View all candy rounds
@@ -893,10 +912,21 @@ function App() {
             </button>
           </div>
           <h1 className="page-title">All Candy Rounds</h1>
-          {isProgressLoading && <p className="status-text">Gathering candies...</p>}
-          {progressMessage && <p className="status-text">{progressMessage}</p>}
+          {isProgressLoading && (
+            <FriendlyState tone="loading" title={progressLoadingMessage} message="Checking every candy round." />
+          )}
+          {progressMessage && (
+            <FriendlyState tone="error" title="Progress is taking a break." message={progressMessage} />
+          )}
           <div className="timeline-scroll">
-            <SessionTimeline sessions={sessions} isProgressLoading={isProgressLoading} />
+            {(sessions.length > 0 || !progressMessage) && (
+              <SessionTimeline
+                sessions={sessions}
+                isProgressLoading={isProgressLoading}
+                emptyTitle="No candy rounds yet."
+                emptyMessage="Your full candy history will appear after your first saved round."
+              />
+            )}
           </div>
         </section>
       )}
@@ -1049,7 +1079,25 @@ function App() {
             <div className="end-stat end-stat-questions">Questions: {resultSession.questionsAttempted}</div>
             <div className="end-stat end-stat-correct">Correct: {resultSession.correctAnswers}</div>
           </div>
-          {saveMessage && <p className="status-text">{saveMessage}</p>}
+          {saveMessage && (
+            <FriendlyState
+              tone={saveMessage.includes('could not') ? 'error' : saveMessage.includes('Saving') ? 'loading' : 'empty'}
+              title={
+                saveMessage.includes('could not')
+                  ? 'Saving took a break.'
+                  : saveMessage.includes('Saving')
+                    ? 'Saving your candies...'
+                    : 'Candies saved.'
+              }
+              message={
+                saveMessage.includes('could not')
+                  ? saveMessage
+                  : saveMessage.includes('Saving')
+                    ? 'Your candy round is heading to your progress.'
+                    : 'Your progress is ready for next time.'
+              }
+            />
+          )}
           <div className="result-actions">
             <button className="primary" type="button" onClick={showSetup}>
               Play Again
@@ -1189,9 +1237,14 @@ function CandyDots() {
   )
 }
 
-function SessionTimeline({ sessions, isProgressLoading }) {
+function SessionTimeline({
+  sessions,
+  isProgressLoading,
+  emptyTitle = 'Your candy trail starts here.',
+  emptyMessage = 'Play a round to start collecting candies.',
+}) {
   if (sessions.length === 0 && !isProgressLoading) {
-    return <div className="empty-progress">Play a round to start collecting candies here.</div>
+    return <FriendlyState tone="empty" title={emptyTitle} message={emptyMessage} />
   }
 
   return (
@@ -1252,6 +1305,18 @@ function SessionTimeline({ sessions, isProgressLoading }) {
           </div>
         </details>
       ))}
+    </div>
+  )
+}
+
+function FriendlyState({ tone = 'empty', title, message }) {
+  return (
+    <div className={`friendly-state friendly-state-${tone}`} role={tone === 'error' ? 'status' : undefined}>
+      <CandyIcon />
+      <div>
+        <strong>{title}</strong>
+        <span>{message}</span>
+      </div>
     </div>
   )
 }

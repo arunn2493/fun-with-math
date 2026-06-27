@@ -27,6 +27,8 @@ const durationOptions = [1, 2, 3, 4, 5]
 const nextQuestionDelayMs = 900
 const progressLoadingMessage = 'Gathering your candy progress...'
 const progressErrorMessage = 'We could not load progress right now. You can still play a round.'
+const offlineProgressMessage = 'You are offline right now. Connect again to refresh your candy progress.'
+const saveTimeoutMs = 7000
 
 const celebrationMessages = [
   'Candy superstar!',
@@ -403,6 +405,16 @@ async function fetchUserSessions(userId) {
   }))
 }
 
+function withTimeout(promise, timeoutMs, timeoutMessage) {
+  let timeoutId
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timeoutId = window.setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    }),
+  ]).finally(() => window.clearTimeout(timeoutId))
+}
+
 function App() {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -423,6 +435,7 @@ function App() {
   const [resultSession, setResultSession] = useState(null)
   const [saveMessage, setSaveMessage] = useState('')
   const [usesOnScreenKeypad, setUsesOnScreenKeypad] = useState(false)
+  const [isOffline, setIsOffline] = useState(() => (typeof navigator === 'undefined' ? false : !navigator.onLine))
 
   const answerInputRef = useRef(null)
   const finishTimerRef = useRef(null)
@@ -472,6 +485,17 @@ function App() {
 
     let isCurrent = true
 
+    if (isOffline) {
+      Promise.resolve().then(() => {
+        if (!isCurrent) return
+        setIsProgressLoading(false)
+        setProgressMessage(offlineProgressMessage)
+      })
+      return () => {
+        isCurrent = false
+      }
+    }
+
     Promise.resolve().then(() => {
       if (!isCurrent) return
       setIsProgressLoading(true)
@@ -493,7 +517,18 @@ function App() {
     return () => {
       isCurrent = false
     }
-  }, [user])
+  }, [user, isOffline])
+
+  useEffect(() => {
+    const updateOnlineState = () => setIsOffline(!navigator.onLine)
+    window.addEventListener('online', updateOnlineState)
+    window.addEventListener('offline', updateOnlineState)
+
+    return () => {
+      window.removeEventListener('online', updateOnlineState)
+      window.removeEventListener('offline', updateOnlineState)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isGameActive) return undefined
@@ -747,8 +782,17 @@ function App() {
     setSessions((currentSessions) => [sessionRecord.optimisticData].concat(currentSessions))
     setSaveMessage('Saving your candies...')
 
+    if (isOffline) {
+      setSaveMessage('Candies could not be saved this time, but you still practiced!')
+      return
+    }
+
     try {
-      await setDoc(sessionRecord.ref, sessionRecord.data)
+      await withTimeout(
+        setDoc(sessionRecord.ref, sessionRecord.data),
+        saveTimeoutMs,
+        'Saving timed out while offline or on a slow network.',
+      )
       setSaveMessage('Candies saved.')
     } catch (error) {
       setSaveMessage('Candies could not be saved this time, but you still practiced!')
@@ -778,10 +822,16 @@ function App() {
   }
 
   const showProgress = () => {
+    if (isOffline) {
+      setProgressMessage(offlineProgressMessage)
+    }
     setScreen('progress')
   }
 
   const showAllRounds = () => {
+    if (isOffline) {
+      setProgressMessage(offlineProgressMessage)
+    }
     setScreen('allRounds')
   }
 

@@ -38,21 +38,21 @@ const celebrationMessages = [
 ]
 
 const keepTryingMessages = [
-  'Good try. Want to collect candies next time?',
+  'Keep trying!',
   'Ready for another candy try?',
-  'Try again to collect your first candy!',
+  'Try again!',
 ]
 
 const noAttemptMessages = [
-  'Try a question to collect candies!',
-  'Give one question a try next time!',
-  'No candies yet. Try one question!',
+  'Try one question!',
+  'Give it a try!',
+  'No candies yet!',
 ]
 
 const lowCandyMessages = [
-  'Nice start. Want to collect a few more?',
-  'Sweet practice! Try again for more candies.',
-  'You earned candies and kept going!',
+  'Nice start!',
+  'Sweet practice!',
+  'Keep collecting!',
 ]
 
 function randomInt(min, max) {

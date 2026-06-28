@@ -783,7 +783,7 @@ function App() {
     setSaveMessage('Saving your candies...')
 
     if (isOffline) {
-      setSaveMessage('Candies could not be saved this time, but you still practiced!')
+      setSaveMessage('Candies are shown for now, but were not saved. You still practiced!')
       return
     }
 
@@ -795,7 +795,7 @@ function App() {
       )
       setSaveMessage('Candies saved.')
     } catch (error) {
-      setSaveMessage('Candies could not be saved this time, but you still practiced!')
+      setSaveMessage('Candies are shown for now, but were not saved. You still practiced!')
       console.error('Could not save session:', error)
     }
   }
@@ -1131,16 +1131,16 @@ function App() {
           </div>
           {saveMessage && (
             <FriendlyState
-              tone={saveMessage.includes('could not') ? 'error' : saveMessage.includes('Saving') ? 'loading' : 'empty'}
+              tone={saveMessage.includes('not saved') ? 'error' : saveMessage.includes('Saving') ? 'loading' : 'empty'}
               title={
-                saveMessage.includes('could not')
-                  ? 'Saving took a break.'
+                saveMessage.includes('not saved')
+                  ? 'Candies are here for now.'
                   : saveMessage.includes('Saving')
                     ? 'Saving your candies...'
                     : 'Candies saved.'
               }
               message={
-                saveMessage.includes('could not')
+                saveMessage.includes('not saved')
                   ? saveMessage
                   : saveMessage.includes('Saving')
                     ? 'Your candy round is heading to your progress.'

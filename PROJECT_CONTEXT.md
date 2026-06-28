@@ -324,83 +324,22 @@ V3 moves the product beyond local-only state into authenticated React gameplay a
 - Firebase Firestore.
 - CSS.
 
-## Current V2 Goals
+## Current Product State
 
-Immediate V2 goal:
-- Complete the login-only Firebase foundation before gameplay moves into React.
+Current app:
+- V4 React/Firebase app in `v2-app`.
+- Production URL: `https://fun-with-math-rouge.vercel.app/`.
+- Main branch: `main`.
+- Main reward language: candies.
+- Current focus: a solid mobile-friendly MVP with authenticated progress, practice recommendations, and kind state handling.
 
-Current V2 scope:
-- Keep "Sign in with Google."
-- Keep "Sign out."
-- Show logged-in user's name and email.
-- Save `users/{uid}` in Firestore after Google login.
-- Track Firestore security rules in the repo.
-- Document Firebase setup and rule deployment.
-- Use Firebase Auth:
-  - `signInWithPopup`
-  - `signOut`
-  - `onAuthStateChanged`
-- Use Firebase Firestore:
-  - `doc`
-  - `getDoc`
-  - `setDoc`
-  - `updateDoc`
-  - `serverTimestamp`
-- Use Firestore security rules to restrict `users/{uid}` access to the signed-in owner.
-- Keep UI simple and kid-friendly.
-- Do not build the math game yet.
+Current user profile path:
+- `users/{uid}`
 
-Why this matters:
-- Login is the foundation for cross-device progress.
-- Once login works, progress can move from localStorage to Firestore.
-- Parent/child profile concepts can be introduced later.
+Current session path:
+- `users/{uid}/sessions/{sessionId}`
 
-## Current V3 Goals
-
-Immediate V3 goal:
-- Rebuild the V1.2 math practice experience inside the V2 React app and save completed sessions to Firestore for signed-in users.
-
-Current V3 scope:
-- Keep Google login and sign-out from V2.
-- Add a signed-in home screen with:
-  - App title.
-  - "Play Now" primary action.
-  - "View Progress" secondary action.
-  - Gentle last-session candy prompt when progress exists.
-- Rebuild the V1.2 setup flow in React:
-  - Duration selector: 1-5 minutes.
-  - Operation selector: addition, subtraction, multiplication, division.
-  - Digit selector: 1 digit, 2 digits, 3 digits.
-  - If no operation is selected, mix all operations.
-  - If no digit level is selected, mix digit levels.
-- Rebuild the V1.2 game flow in React:
-  - Countdown timer.
-  - Candies collected.
-  - Question counter.
-  - One question at a time.
-  - Answer input with submit and Enter key support.
-  - Input auto-focus.
-  - Back/home control from game screen.
-  - Reliable timer-end result transition.
-  - Short grace handling for final Enter/Submit at 0:00.
-- Rebuild the V1.2 result flow in React:
-  - Candies collected.
-  - Questions attempted.
-  - Correct answer count may exist internally, but should not be emphasized as the main reward.
-  - Encouraging end messages based on candies earned.
-- Rebuild the V1.2 progress flow in React:
-  - Lifetime candies.
-  - Last session candies.
-  - Last 5 sessions.
-  - Recent session cards showing date/time, candies earned, questions attempted, duration, operations, and digit levels.
-  - Do not emphasize correct answers in recent session cards.
-- Save completed sessions to Firestore under the signed-in user:
-  - `users/{uid}/sessions/{sessionId}`
-- Read recent sessions and lifetime candies from Firestore for signed-in users.
-- Keep the app friendly and low-pressure.
-- Keep Firestore rules updated for any new session collection path.
-
-V3 session document shape:
+Current session document shape:
 - `id`
 - `uid`
 - `createdAt`
@@ -410,90 +349,51 @@ V3 session document shape:
 - `durationMinutes`
 - `operations`
 - `digitLevels`
+- `operationStats`
+- `digitStats`
 
-V3 out of scope:
+Current V4 capabilities:
+- Google sign-in and sign-out.
+- Firestore user profile persistence.
+- Firestore session persistence.
+- Signed-in Home, Pick Your Round, Gameplay, Result, Candy Progress, and All Candy Rounds screens.
+- Lifetime candies and last-session candies loaded from Firestore.
+- Recent Candy Rounds timeline with latest 5 sessions.
+- Older sessions available in All Candy Rounds.
+- Operation-level and digit-level stats saved per session.
+- Expandable recent-session details with correct/attempted counts.
+- Setup recommendation accordion based on the lowest-performing operation(s) and digit size(s) from the latest 5 sessions.
+- Friendly loading, empty, offline, and save-state messages.
+- Submit-based gameplay flow with visual answer feedback.
+- Handheld on-screen keypad for mobile/tablet play.
+- Confetti on strong post-game results.
+- Responsive no-scroll layout polish for small screens.
+
+Current out of scope:
 - Parent dashboard.
 - Multiple child profiles.
 - Classroom mode.
-- Skill recommendations.
-- Operation-level analytics dashboards.
+- Operation-level analytics dashboards for adults.
 - Migration of existing V1 localStorage data.
 - Offline sync beyond graceful UI messaging.
 
 ## Future Roadmap
 
-### V4 - Practice Intelligence
+### V5 - Pending: Parent Trust and Adult Visibility
 
 Goals:
-- Make practice more adaptive without feeling clinical.
-- Track progress by operation and digit level.
-- Suggest gentle practice plans.
-- Keep the child-facing UI joyful, bold, visually consistent, and pressure-free.
-
-Potential features:
-- Operation-level progress:
-  - Addition.
-  - Subtraction.
-  - Multiplication.
-  - Division.
-- Operation-level stats per completed session:
-  - Questions attempted.
-  - Correct answers.
-- Digit-level progress:
-  - 1 digit.
-  - 2 digits.
-  - 3 digits.
-- Digit-level stats per completed session:
-  - Questions attempted.
-  - Correct answers.
-- Aggregate skill summaries across sessions:
-  - Total attempted by operation.
-  - Total correct by operation.
-  - Total attempted by digit level.
-  - Total correct by digit level.
-- Soft recommendations:
-  - "Try some subtraction candies today."
-  - "Want to practice 2-digit numbers?"
-- Avoid labels like "weakness" or "failed."
-- Avoid harsh accuracy framing in child-facing screens.
-- Keep stats available for intelligence and future parent views without making the child experience feel like a report card.
-
-Potential V4 session document additions:
-- `operationStats`
-  - `addition.attempted`
-  - `addition.correct`
-  - `subtraction.attempted`
-  - `subtraction.correct`
-  - `multiplication.attempted`
-  - `multiplication.correct`
-  - `division.attempted`
-  - `division.correct`
-- `digitStats`
-  - `1.attempted`
-  - `1.correct`
-  - `2.attempted`
-  - `2.correct`
-  - `3.attempted`
-  - `3.correct`
-
-V4 UX direction:
-- The app should remain visually pleasing for children.
-- Button labels should be bold, clear, and easy to tap.
-- The theme should remain consistent across Home, Setup, Game, Result, and Progress.
-- Practice suggestions should feel like invitations, not judgments.
-- Progress language should stay candy-first and confidence-building.
-
-### V5 - Parent and Classroom Support
-
-Goals:
+- Add trust-building context for parents.
 - Give adults useful visibility without making the child experience pressured.
+- Keep the child-facing experience candy-first, playful, and emotionally safe.
 
 Potential features:
+- Short parent-facing explanation of how progress is saved.
+- Clear privacy/safety copy.
+- Parent-friendly progress summary.
+- Weekly candy summary.
+- Optional practice guidance for adults.
 - Parent dashboard.
 - Multiple child profiles.
-- Weekly candy summary.
-- Practice plan creation.
-- Printable or shareable progress.
 - Optional classroom mode.
 
 Important constraint:
@@ -520,9 +420,9 @@ Important constraint:
 ### Progress Persistence
 
 - Completed sessions are saved when the game ends.
-- localStorage can be inconsistent with `file://` browser usage, so V1.2 also uses an in-memory fallback.
-- Progress rendering merges saved and in-memory sessions.
-- Reset progress clears both localStorage and in-memory progress.
+- V1.2 uses localStorage plus an in-memory fallback.
+- V4 saves authenticated progress to Firestore at `users/{uid}/sessions/{sessionId}`.
+- If Firestore save is delayed or unavailable, the just-completed result can still be shown locally with friendly save-state messaging.
 
 ### End Messages
 
@@ -530,6 +430,7 @@ End messages are based on candies earned:
 - 0 candies: polite encouragement to try again.
 - Fewer than 10 candies: positive feedback plus an invitation to collect more.
 - 10 or more candies: celebratory feedback.
+- Current result messages should stay short, ideally under 5 words.
 
 This supports emotional safety while still encouraging replay.
 
@@ -544,8 +445,9 @@ The progress screen shows:
 - Duration.
 - Operations.
 - Digits.
+- Expandable operation and digit details by session.
 
-The progress screen intentionally does not show correct answers in recent session cards because it can feel score-like. Correct answers may still exist internally for future analytics, but it should not be emphasized in child-facing progress.
+The progress screen keeps correct-answer detail behind expandable session details so the default view stays candy-first and low-pressure.
 
 ## Key Product Decisions Made So Far
 
@@ -561,6 +463,7 @@ The progress screen intentionally does not show correct answers in recent sessio
 - The app should support direct browser opening for V1.
 - V2 proved login before rebuilding the game.
 - V3 keeps Firebase Auth and adds Firestore-backed session progress.
+- V4 adds practice intelligence and mobile MVP polish.
 - Firestore rules should evolve with each new data path before launch.
 
 ## Repository and Version Folder Notes
@@ -573,7 +476,7 @@ Versioning convention:
   - `fun-with-math/mvp/index.html`
 - React V2 work lives in:
   - `fun-with-math/v2-app`
-- React V3 work continues in:
+- React V2+ work continues in:
   - `fun-with-math/v2-app`
 
 Current recommended structure:
@@ -595,17 +498,13 @@ fun-with-math/
 ## Current Status
 
 V1.2:
-- Functional in the working preview file.
-- Needs to be copied into the repo path when write permissions allow:
-  - `fun-with-math/v1/index.html`
+- Available in `fun-with-math/v1/index.html` as the older local-only version.
 
-V3:
-- Firebase config exists.
-- Google Login app shell exists.
-- Firestore user profile persistence exists.
-- Firestore user-profile rules exist in the repo.
-- Firebase setup documentation exists.
-- React gameplay, result, and progress screens exist.
+V4:
+- Current production app lives in `v2-app`.
+- Deployed at `https://fun-with-math-rouge.vercel.app/`.
+- Firebase Auth and Firestore are active.
 - Completed sessions save to `users/{uid}/sessions/{sessionId}`.
-- Firestore rules include session creates and reads.
-- Next step is deploying the updated V3 Firestore rules and runtime testing authenticated session saves.
+- Session documents include operation and digit stats.
+- Setup recommendations, expandable progress details, mobile gameplay usability, and responsive no-scroll layout polish are implemented.
+- V5 is pending and should focus on parent trust polish and adult-facing visibility.

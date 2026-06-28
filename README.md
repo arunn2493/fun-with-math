@@ -29,15 +29,15 @@ v1/index.html
 
 It is a single-file HTML/CSS/JavaScript app with local progress saved on the device.
 
-### V3.1
+### V4
 
-V3.1 is the current React/Firebase app. It lives in:
+V4 is the current React/Firebase app. It lives in:
 
 ```text
 v2-app/
 ```
 
-V3.1 includes:
+V4 includes:
 
 - React + Vite app.
 - Firebase Google sign-in.
@@ -48,15 +48,22 @@ V3.1 includes:
 - React setup, gameplay, result, and progress screens.
 - Firestore session persistence at `users/{uid}/sessions/{sessionId}`.
 - Lifetime candies and recent sessions loaded from Firestore.
+- Operation-level and digit-level session stats.
+- Setup recommendation accordion based on the lowest-performing operations and digit sizes from recent sessions.
+- Expandable recent-session details showing correct/attempted counts by operation and digit size.
 - Polished Candy Progress timeline with latest 5 sessions.
 - Separate scrollable All Candy Rounds view for older sessions.
-- Polished post-game result screen with candy-focused scoring and animated stars.
+- Mobile-friendly gameplay with on-screen keypad for handheld devices.
+- Submit-based answer flow with visual feedback for correct/incorrect answers.
+- Friendly loading, empty, offline, and save-state messaging.
+- Polished post-game result screen with candy-focused rewards and confetti for strong rounds.
+- Responsive no-scroll layout polish for mobile result, gameplay, setup, and progress screens.
 - Repo-tracked Firestore security rules.
 - Firebase setup documentation.
 
-### Next: V4
+### Next: V5 - Pending
 
-V4 will make practice more adaptive by tracking progress by operation and digit level and offering gentle practice suggestions.
+V5 is pending. It should focus on parent trust polish and adult-facing visibility without adding pressure to the child-facing experience.
 
 ## Repository Structure
 
@@ -220,12 +227,34 @@ npx firebase-tools deploy --only firestore:rules --project fun-with-math-bd66c
 - Added a subtle 5-star result animation based on correct-answer percentage.
 - Kept candies collected as the main reward focus.
 
-V3 does not include:
+### V4
+
+- Added operation-level and digit-level stats to saved sessions.
+- Added expandable recent-session details with correct/attempted counts.
+- Added gentle practice recommendations based on recent operation and digit performance.
+- Highlighted recommendation targets in setup.
+- Added mobile gameplay usability improvements:
+  - Handheld on-screen keypad.
+  - Submit button required for answers.
+  - Stable mobile gameplay layout.
+  - Visible timer and feedback messaging.
+- Added visual feedback for correct and incorrect answers.
+- Added friendly loading, empty, offline, and save-state messaging.
+- Added responsive no-scroll layout polish for small screens.
+- Refined post-game result hierarchy, short messages, larger mobile result cards, and confetti celebration for strong rounds.
+
+### V5 - Pending
+
+- Parent trust polish.
+- Parent-friendly context around how progress is saved and used.
+- Clearer privacy/safety language.
+- Optional adult-facing progress visibility.
+- Keep all adult-facing analytics separate from the child-facing reward loop.
+
+Current app does not include:
 
 - Parent dashboard.
 - Multiple child profiles.
 - Classroom mode.
-- Skill recommendations.
-- Operation-level analytics dashboards.
 - Migration of existing V1 localStorage data.
 - Offline sync beyond graceful UI messaging.
